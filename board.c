@@ -1,52 +1,5 @@
 #include "board.h"
 
-//Helper
-void set_standard_position(Board* board) {
-    unsigned char size = board->size;
-    for (unsigned char c = 0; c < size; c++) {
-        Piece* black_pawn = piece_new(PAWN, BLACK_SIDE, make_pos(1, c));
-        set_pawn_transformation(black_pawn, MOVING_DOWN);
-        board_set(board, make_pos(1, c), PIECE, black_pawn);
-
-        Piece* white_pawn = piece_new(PAWN, WHITE_SIDE, make_pos(6, c));
-        set_pawn_transformation(white_pawn, MOVING_UP);
-        board_set(board, make_pos(6, c), PIECE, white_pawn);
-    }
-    Piece* black_rookl = piece_new(ROOK, BLACK_SIDE, make_pos(0, 0));           
-    board_set(board, make_pos(0, 0), PIECE, black_rookl);
-    Piece* black_rookr = piece_new(ROOK, BLACK_SIDE, make_pos(0, 7));           
-    board_set(board, make_pos(0, 7), PIECE, black_rookr);
-    Piece* black_knightl = piece_new(KNIGHT, BLACK_SIDE, make_pos(0, 1));        
-    board_set(board, make_pos(0, 1), PIECE, black_knightl);
-    Piece* black_knightr = piece_new(KNIGHT, BLACK_SIDE, make_pos(0, 6));       
-    board_set(board, make_pos(0, 6), PIECE, black_knightr);
-    Piece* black_bishopl = piece_new(BISHOP, BLACK_SIDE, make_pos(0, 2));       
-    board_set(board, make_pos(0, 2), PIECE, black_bishopl);
-    Piece* black_bishopr = piece_new(BISHOP, BLACK_SIDE, make_pos(0, 5));       
-    board_set(board, make_pos(0, 5), PIECE, black_bishopr);
-    Piece* black_queen = piece_new(QUEEN, BLACK_SIDE, make_pos(0, 3));          
-    board_set(board, make_pos(0, 3), PIECE, black_queen);
-    Piece* black_king = piece_new(KING, BLACK_SIDE, make_pos(0, 4));            
-    board_set(board, make_pos(0, 4), PIECE, black_king);
-    
-    Piece* white_rookl = piece_new(ROOK, WHITE_SIDE, make_pos(7, 0));           
-    board_set(board, make_pos(7, 0), PIECE, white_rookl);
-    Piece* white_rookr = piece_new(ROOK, WHITE_SIDE, make_pos(7, 7));           
-    board_set(board, make_pos(7, 7), PIECE, white_rookr);
-    Piece* white_knightl = piece_new(KNIGHT, WHITE_SIDE, make_pos(7, 1));       
-    board_set(board, make_pos(7, 1), PIECE, white_knightl);
-    Piece* white_knightr = piece_new(KNIGHT, WHITE_SIDE, make_pos(7, 6));       
-    board_set(board, make_pos(7, 6), PIECE, white_knightr);
-    Piece* white_bishopl = piece_new(BISHOP, WHITE_SIDE, make_pos(7, 2));       
-    board_set(board, make_pos(7, 2), PIECE, white_bishopl);
-    Piece* white_bishopr = piece_new(BISHOP, WHITE_SIDE, make_pos(7, 5));       
-    board_set(board, make_pos(7, 5), PIECE, white_bishopr);
-    Piece* white_queen = piece_new(QUEEN, WHITE_SIDE, make_pos(7, 3));          
-    board_set(board, make_pos(7, 3), PIECE, white_queen);
-    Piece* white_king = piece_new(KING, WHITE_SIDE, make_pos(7, 4));            
-    board_set(board, make_pos(7, 4), PIECE, white_king);
-}
-
 Cell* cell_new(cell_type type, Piece* piece) {
     Cell* res = (Cell*)malloc(sizeof(Cell));
     res->type = type;
@@ -61,23 +14,94 @@ void cell_free(Cell* cell) {
     free(cell);
 }
 
+//Helper
+void place_piece(Board* board, piece_kind kind, piece_side side, Pos pos) {
+    unsigned char plen = board->plen;
+    if (side == BLACK_SIDE) {
+        if (board->bpnum == plen) {
+            exit(1);
+        }
+    } else {
+        if (board->wpnum == plen) {
+            exit(1);
+        }
+    }
+    Piece* piece = piece_new(kind, side, pos);
+    board_set(board, pos, PIECE, piece);
+    for (unsigned char i = 0; i < plen; i++) {
+        if (side == BLACK_SIDE) {
+            if (board->black_pieces[i] == NULL) {
+                board->black_pieces[i] = piece;
+                (board->bpnum)++;
+                break;
+            }
+        } else {
+            if (board->white_pieces[i] == NULL) {
+                board->white_pieces[i] = piece;
+                (board->wpnum)++;
+                break;
+            }
+        }
+    }
+}
+
+void set_standard_position(Board* board) {
+    unsigned char size = board->size;
+    for (unsigned char c = 0; c < size; c++) {
+        place_piece(board, PAWN, BLACK_SIDE, make_pos(1, c));
+        place_piece(board, PAWN, WHITE_SIDE, make_pos(6, c));
+    }
+    place_piece(board, ROOK, BLACK_SIDE, make_pos(0, 0));           
+    place_piece(board, ROOK, BLACK_SIDE, make_pos(0, 7));           
+    place_piece(board, KNIGHT, BLACK_SIDE, make_pos(0, 1));       
+    place_piece(board, KNIGHT, BLACK_SIDE, make_pos(0, 6));       
+    place_piece(board, BISHOP, BLACK_SIDE, make_pos(0, 2));       
+    place_piece(board, BISHOP, BLACK_SIDE, make_pos(0, 5));       
+    place_piece(board, QUEEN, BLACK_SIDE, make_pos(0, 3));       
+    place_piece(board, KING, BLACK_SIDE, make_pos(0, 4));       
+
+    place_piece(board, ROOK, WHITE_SIDE, make_pos(7, 0));       
+    place_piece(board, ROOK, WHITE_SIDE, make_pos(7, 7));       
+    place_piece(board, KNIGHT, WHITE_SIDE, make_pos(7, 1));       
+    place_piece(board, KNIGHT, WHITE_SIDE, make_pos(7, 6));       
+    place_piece(board, BISHOP, WHITE_SIDE, make_pos(7, 2));       
+    place_piece(board, BISHOP, WHITE_SIDE, make_pos(7, 5));       
+    place_piece(board, QUEEN, WHITE_SIDE, make_pos(7, 3));       
+    place_piece(board, KING, WHITE_SIDE, make_pos(7, 4));
+}
+
 Board* board_new(move_direction direction) {
     unsigned char size = 8;
     Board* board = (Board*)malloc(sizeof(Board));
-    Cell*** matrix = (Cell***)malloc(sizeof(Cell**) * size);
+    board->matrix = (Cell***)malloc(sizeof(Cell**) * size);
     for (unsigned char r = 0; r < size; r++) {
-        matrix[r] = (Cell**)malloc(sizeof(Cell*) * size);
+        board->matrix[r] = (Cell**)malloc(sizeof(Cell*) * size);
         for (unsigned char c = 0; c < size; c++) {
-            matrix[r][c] = cell_new(EMPTY, NULL);
+            board->matrix[r][c] = cell_new(EMPTY, NULL);
         }
     }
-    board->matrix = matrix;
     board->size = size;
     board->direction = direction;
+    board->plen = 20;
+    unsigned char plen = board->plen;
+    board->white_pieces = (Piece**)malloc(sizeof(Piece*) * plen);
+    //4 spots added considering pawn promotion
+    board->black_pieces = (Piece**)malloc(sizeof(Piece*) * plen);
+    board->wpnum = 0;
+    board->bpnum = 0;
+    for (unsigned char i = 0; i < plen; i++) {
+        board->white_pieces[i] = NULL;
+        board->black_pieces[i] = NULL;
+    }
     set_standard_position(board);
-//    if (direction == MOVING_DOWN) {
-//        board_flip(board);
-//    }
+    if (direction == MOVING_DOWN) {
+        board_flip(board);
+        board->black_king = make_pos(7, 3);
+        board->white_king = make_pos(0, 3);
+    } else {
+        board->black_king = make_pos(0, 4);
+        board->white_king = make_pos(7, 4);
+    }
     return board;
 }
 
@@ -89,6 +113,8 @@ void board_free(Board* board) {
         }
         free(board->matrix[r]);
     }
+    free(board->white_pieces);
+    free(board->black_pieces);
     free(board->matrix);
 }
 
@@ -110,8 +136,8 @@ void print_chars(move_direction direction) {
 //Helper
 char maybe_upp(piece_side side, char c) {
     if (side == WHITE_SIDE) {
-        char res = c - ('a' - 'A');
-        return res;
+        char new_c = c - ('a' - 'A');
+        return new_c;
     }
     return c;
 }
@@ -189,12 +215,66 @@ void board_set(Board* board, Pos pos, cell_type type, Piece* piece) {
         cell->piece->position = pos;
     }
 }
-            
 
+void board_flip(Board* board) {
+    unsigned char size = board->size;
+    for (unsigned char r = 0; r < (size / 2); r++) {
+        for (unsigned char c = 0; c < size; c++) {
+            Pos pos = make_pos(r, c);
+            Pos mirr_pos = make_pos(size - 1 - r, size - 1 - c);
+            Cell* cell = board_get(board, pos);
+            Cell* mirr_cell = board_get(board, mirr_pos);
+            if (cell->type == EMPTY) {
+                if (mirr_cell->type == EMPTY) {
+                    continue;
+                }
+                board_set(board, pos, PIECE, mirr_cell->piece);
+                board_set(board, mirr_pos, EMPTY, NULL);
+            } else {
+                if (mirr_cell->type == EMPTY) {
+                    board_set(board, mirr_pos, PIECE, cell->piece);
+                    board_set(board, pos, EMPTY, NULL);
+                } else {
+                    Piece* tmp_piece = cell->piece;
+                    board_set(board, pos, PIECE, mirr_cell->piece);
+                    board_set(board, mirr_pos, PIECE, tmp_piece);
+                }
+            }
+        }
+    }
+}
 
+bool check(Board* board, piece_side maybe_threatened) {
+    Pos king_pos;
+    if (maybe_threatened == WHITE_SIDE) {
+        king_pos = board->white_king;
+    } else {
+        king_pos = board->black_king;
+    }
+    return square_maybe_targeted(board, king_pos, maybe_threatened);
+}
 
+//Helper
+bool encounter(Board* board, piece_kind kind, piece_side side, 
+                                              Transformation transformation) {
 
-
+    
+//only check trajectories starting from the king
+//also these trajectories only have to be from pieces still on board
+bool square_maybe_targeted(Board* board, Pos pos, piece_side targeted) {
+    bool rook_found = false, pawn_found = false, knight_found = false,
+            bishop_found = false, queen_found = false, king_found = false;
+    unsigned char plen = board->plen;
+    if (targeted == WHITE_SIDE) {
+        for (unsigned char i = 0; i < plen; i++) {
+            Piece* piece = board->black_pieces[i];
+            if (piece == NULL) {
+                continue;
+            }
+            piece_kind kind = board->black_pieces[i]->kind;
+            switch (kind) {
+                case PAWN:
+                    if (board->direction == MOVING_UP) {
 
 
 

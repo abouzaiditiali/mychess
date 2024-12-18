@@ -19,36 +19,36 @@ typedef enum {
 } piece_side;
 
 typedef enum {
-    ONE_TRANSFORMATION,
-    TWO_TRANSFORMATIONS,
-    AS_MANY
-} max_distance;
-
-typedef enum {
     MOVING_UP,
-    MOVING_DOWN
+    MOVING_DOWN,
 } move_direction;
+
+typedef struct {
+    char* transformations;
+    unsigned char len;
+    unsigned char max_repeat; //can either be 1, 2, or 7
+} Transformation;
 
 typedef struct {
     piece_kind kind;
     piece_side side;
     Pos position;
-    char* transformations;
-    union {
-        char* pc_transformations; //pc stands for pawn capture
-        max_distance pc_travel;
-        move_direction direction;
-    };
     bool moved;
-    max_distance travel; //highest number of transformations allowed
 } Piece;
 
 
 Piece* piece_new(piece_kind kind, piece_side side, Pos position);
 
-void set_pawn_transformation(Piece* piece, move_direction direction);
-
 void piece_free(Piece* piece);
+
+Transformation transformation_new(char* t, unsigned char len, 
+                                                unsigned char max_repeat);
+
+Transformation transformation_get(piece_kind kind); //any piece but pawn
+
+Transformation ptransformation_get(move_direction direction, bool capture);
+
+void transformation_free(Transformation t);
 
 
 #endif /* PIECE_H */

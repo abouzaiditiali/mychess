@@ -20,6 +20,9 @@ typedef struct {
     Cell*** matrix;  
     unsigned char size;
     move_direction direction; //in relation to white
+    Pos white_king, black_king;
+    Piece **white_pieces, **black_pieces;
+    unsigned char wpnum, bpnum, plen;
 } Board;
 
 
