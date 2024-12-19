@@ -252,29 +252,84 @@ bool check(Board* board, piece_side maybe_threatened) {
         king_pos = board->black_king;
     }
     return square_maybe_targeted(board, king_pos, maybe_threatened);
+    //be careful with case of king checking
+}
+
+bool out_of_bounds(unsigned char size, Pos pos) {
+    return pos.r < 0 || pos.r >= size || pos.c < 0 || pos.c >= size;
 }
 
 //Helper
 bool encounter(Board* board, piece_kind kind, piece_side side, 
                                               Transformation transformation) {
+}
 
-    
+bool handle_kind(Board* board, piece_kind kind, move_direction direction, 
+                                         piece_side side, bool* maybe_found) { 
+    piece_kind pk[6] = {PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING};
+    for (unsigned char i = 0; i < 6; i++) {
+        if (kind == pk[i]) {
+            if (maybe_found[i]) {
+                break;
+            }
+            maybe_found[i] = true;
+            if (kind == PAWN) {
+                if (direction == MOVING_UP) {
+                    if (encounter(board, kind, side, 
+                                    ptransformation_get(MOVING_DOWN, true))) {
+                        return true;
+                    }
+                } else {
+                    if (encounter(board, kind, side, 
+                                      ptransformation_get(MOVING_UP, true))) {
+                        return true;
+                    } 
+                }
+            } else {
+                if (encounter(board, kind, side, transformation_get(kind))) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 //only check trajectories starting from the king
 //also these trajectories only have to be from pieces still on board
+//do not check the same piece trajectory twice
 bool square_maybe_targeted(Board* board, Pos pos, piece_side targeted) {
-    bool rook_found = false, pawn_found = false, knight_found = false,
-            bishop_found = false, queen_found = false, king_found = false;
+    bool maybe_found[6] = {false}; 
     unsigned char plen = board->plen;
-    if (targeted == WHITE_SIDE) {
-        for (unsigned char i = 0; i < plen; i++) {
-            Piece* piece = board->black_pieces[i];
-            if (piece == NULL) {
-                continue;
-            }
-            piece_kind kind = board->black_pieces[i]->kind;
-            switch (kind) {
-                case PAWN:
-                    if (board->direction == MOVING_UP) {
+    move_direction direction = board->direction;
+    for (unsigned char i = 0; i < plen; i++) {
+        Piece* piece;
+        piece_side side;
+        if (targeted == WHITE_SIDE) {
+            piece = board->black_pieces[i];
+            side = BLACK_SIDE;
+        } else {
+            piece = board->white_pieces[i];
+            side = WHITE_SIDE;
+        }
+        if (piece == NULL) {
+            continue;
+        }
+        if (handle_kind(board, piece->kind, direction, side, maybe_found)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+
+
+
+
+
+
+
 
 
 
