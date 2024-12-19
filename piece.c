@@ -27,29 +27,36 @@ Transformation transformation_new(char* from, unsigned char len,
 
 Transformation transformation_get(piece_kind kind) {
     switch (kind) {
-        case KNIGHT:
+        case KNIGHT: {
             char tn[16] = {-2, -1, -2, 1, -1, -2, -1, 2, 
                            1, -2, 1, 2, 2, -1, 2, 1};
             return transformation_new(tn, 16, 1);
-        case BISHOP:
+        }
+        case BISHOP: {
             char tb[8] = {-1, -1, -1, 1, 1, -1, 1, 1};
             return transformation_new(tb, 8, 7);
-        case ROOK:
+        }
+        case ROOK: {
             char tr[8] = {-1, 0, 0, -1, 0, 1, 1, 0};
             return transformation_new(tr, 8, 7);
-        case QUEEN:
+        }
+        case QUEEN: {
             char tq[16] = {-1, -1, -1, 0, -1, 1, 0, -1, 
                            0, 1, 1, -1, 1, 0, 1, 1};
             return transformation_new(tq, 16, 7);
-        case KING:
+        }
+        case KING: {
             char tk[16] = {-1, -1, -1, 0, -1, 1, 0, -1, 
                            0, 1, 1, -1, 1, 0, 1, 1};
             return transformation_new(tk, 16, 1);
+        }
+        default:
+            fprintf(stderr, "Wrong function to get pawn transformation\n");
+            exit(1);
     }
-    return NULL;
 }
 
-Transformation* ptransformation_get(move_direction direction, bool capture) {
+Transformation ptransformation_get(move_direction direction, bool capture) {
     if (direction == MOVING_UP) {
         if (!capture) {
             char tpu[2] = {-1, 0}; 

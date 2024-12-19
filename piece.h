@@ -37,7 +37,7 @@ typedef struct {
 } Piece;
 
 
-Piece* piece_new(piece_kind kind, piece_side side, Pos position);
+Piece* piece_new(piece_kind kind, piece_side side, Pos position, bool moved);
 
 void piece_free(Piece* piece);
 
