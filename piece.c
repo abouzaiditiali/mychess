@@ -24,6 +24,7 @@ Transformation copy_transformation(char* from, unsigned char len,
     for (unsigned char i = 0; i < len; i++) {
         t.transformations[i] = from[i];
     }
+    t.len = len;
     return t;
 }
 

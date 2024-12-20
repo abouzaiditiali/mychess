@@ -29,7 +29,11 @@ void board_set(Board* board, Pos pos, Piece* piece);
 
 void board_swap(Board* board, Pos pos1, Pos pos2);
 
+void place_piece(Board* board, char* call);
+
 void board_flip(Board* board);
+
+bool square_targeted(Board* board, Pos pos, side targeted);
 
 bool check(Board* board, side threatened);
 
@@ -38,8 +42,6 @@ bool checkmate(Board* board);
 bool stalemate(Board* board);
 
 bool piece_pinned(Board* board, Piece* piece);
-
-Pos kingpos_get(Board* board, side king_side);
 
 
 #endif /* BOARD_H */
