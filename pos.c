@@ -7,3 +7,10 @@ Pos make_pos(unsigned char r, unsigned char c) {
     return pos;
 }
 
+void malloc_check(void* p) {
+    if (p == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(1);
+    }
+}
+

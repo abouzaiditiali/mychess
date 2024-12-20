@@ -13,5 +13,8 @@ typedef struct {
 
 Pos make_pos(unsigned char r, unsigned char c);
 
+//General Purpose Function
+void malloc_check(void* p);
+
 
 #endif /* POS_H */

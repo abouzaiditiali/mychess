@@ -1,12 +1,13 @@
 #include "board.h"
 
 int main() {
-    Board* board = board_new(MOVING_UP, EMPTY_BOARD);
-    place_piece(
+    Board* board = board_new(BLACK_MOVING_UP, STANDARD_POSITION);
+    board_flip(board);
 
     board_show(board);
-    printf("%d\n", check(board, WHITE_SIDE));
+    //printf("%d\n", check(board, WHITE_SIDE));
 
+    board_free(board);
     return 0;
 }
 

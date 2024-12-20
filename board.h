@@ -4,13 +4,11 @@
 #include "piece.h"
 
 
-
 typedef struct {
     Piece*** matrix;  
     unsigned char size;
-    move_direction direction; //in relation to white
-    Piece **white_pieces, **black_pieces;
-    unsigned char wpnum, bpnum, plen;
+    board_direction direction;
+    Piecelist *white_pieces, *black_pieces;
 } Board;
 
 typedef enum {
@@ -19,7 +17,7 @@ typedef enum {
 } start_position;
 
 
-Board* board_new(move_direction direction, start_position position);
+Board* board_new(board_direction direction, start_position position);
 
 void board_free(Board* board);
 
@@ -33,7 +31,7 @@ void board_swap(Board* board, Pos pos1, Pos pos2);
 
 void board_flip(Board* board);
 
-bool check(Board* board, piece_side threatened);
+bool check(Board* board, side threatened);
 
 bool checkmate(Board* board);
 
@@ -41,7 +39,7 @@ bool stalemate(Board* board);
 
 bool piece_pinned(Board* board, Piece* piece);
 
-Pos kingpos_get(Board* board, piece_side side);
+Pos kingpos_get(Board* board, side king_side);
 
 
 #endif /* BOARD_H */

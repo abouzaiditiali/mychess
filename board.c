@@ -4,69 +4,62 @@ void set_standard_position(Board* board) {
     unsigned char size = board->size;
     for (unsigned char c = 0; c < size; c++) {
         board_set(board, make_pos(1, c), 
-                  piece_new(PAWN, BLACK_SIDE, make_pos(1, c), false));
+                  piece_new(PAWN, BLACK_SIDE, NOT_MOVED, make_pos(1, c)));
         board_set(board, make_pos(6, c), 
-                  piece_new(PAWN, WHITE_SIDE, make_pos(6, c), false));
+                  piece_new(PAWN, WHITE_SIDE, NOT_MOVED, make_pos(6, c)));
     }
     piece_kind pk[8] = {ROOK, ROOK, KNIGHT, KNIGHT, 
                         BISHOP, BISHOP, QUEEN, KING};
     unsigned char positions[8] = {0, 7, 1, 6, 2, 5, 3, 4};
     for (unsigned char i = 0; i < 8; i++) {
         board_set(board, make_pos(0, positions[i]),
-               piece_new(pk[i], BLACK_SIDE, make_pos(0, positions[i]), false));
+          piece_new(pk[i], BLACK_SIDE, NOT_MOVED, make_pos(0, positions[i])));
         board_set(board, make_pos(7, positions[i]),
-               piece_new(pk[i], WHITE_SIDE, make_pos(7, positions[i]), false));
+          piece_new(pk[i], WHITE_SIDE, NOT_MOVED, make_pos(7, positions[i])));
     }
 }
 
-Board* board_new(move_direction direction, start_position position) {
+Board* board_new(board_direction direction, start_position position) {
     unsigned char size = 8;
     Board* board = (Board*)malloc(sizeof(Board));
+    malloc_check(board);
     board->matrix = (Piece***)malloc(sizeof(Piece**) * size);
+    malloc_check(board->matrix);
     for (unsigned char r = 0; r < size; r++) {
         board->matrix[r] = (Piece**)malloc(sizeof(Piece*) * size);
+        malloc_check(board->matrix[r]);
         for (unsigned char c = 0; c < size; c++) {
             board->matrix[r][c] = NULL;
         }
     }
     board->size = size;
-    board->direction = MOVING_UP;
-    board->plen = 20;
-    unsigned char plen = board->plen;
-    board->white_pieces = (Piece**)malloc(sizeof(Piece*) * plen);
-    board->black_pieces = (Piece**)malloc(sizeof(Piece*) * plen);
-    board->wpnum = 0;
-    board->bpnum = 0;
-    for (unsigned char i = 0; i < plen; i++) {
-        board->white_pieces[i] = NULL;
-        board->black_pieces[i] = NULL;
-    }
+    board->direction = WHITE_MOVING_UP;
+    board->white_pieces = piecelist_new();
+    board->black_pieces = piecelist_new();
     if (position == STANDARD_POSITION) {
         set_standard_position(board);
     }
-    if (direction == MOVING_DOWN) {
+    if (direction == BLACK_MOVING_UP) {
         board_flip(board);
     }
     return board;
 }
 
 void board_free(Board* board) {
+    piecelist_free(board->white_pieces);
+    piecelist_free(board->black_pieces);
     unsigned char size = board->size;
     for (unsigned char r = 0; r < size; r++) {
-        for (unsigned char c = 0; c < size; c++) {
-            piece_free(board_get(board, make_pos(r, c)));
-        }
         free(board->matrix[r]);
     }
-    free(board->white_pieces);
-    free(board->black_pieces);
     free(board->matrix);
+    free(board);
 }
 
 //Helper 
-void print_chars(move_direction direction) {
+void print_chars(board_direction direction) {
     printf("  ");
-    if (direction == MOVING_UP) {
+    if (direction == WHITE_MOVING_UP) {
         for (char c = 'a'; c <= 'h'; c++) {
             printf("   %c", c);
         }
@@ -79,7 +72,7 @@ void print_chars(move_direction direction) {
 }
 
 //Helper
-char maybe_upp(piece_side side, char c) {
+char maybe_upp(side side, char c) {
     if (side == WHITE_SIDE) {
         char new_c = c - ('a' - 'A');
         return new_c;
@@ -89,7 +82,6 @@ char maybe_upp(piece_side side, char c) {
 
 //Helper
 char convert_piece_to_char(Piece* piece) {
-    char c;
     if (piece == NULL) {
         return '.';
     }
@@ -121,7 +113,7 @@ void board_show(Board* board) {
             }
         } else {
             printf(" ");
-            if (board->direction == MOVING_UP) {
+            if (board->direction == WHITE_MOVING_UP) {
                 printf("%hhu", mu);
             } else {
                 printf("%hhu", md);
@@ -134,7 +126,7 @@ void board_show(Board* board) {
             }
             curr++;
             printf(" ");
-            if (board->direction == MOVING_UP) {
+            if (board->direction == WHITE_MOVING_UP) {
                 printf("%hhu", mu--);
             } else {
                 printf("%hhu", md++);
@@ -160,59 +152,39 @@ Piece* board_get(Board* board, Pos pos) {
     return piece;
 }
 
-//Helper
 void board_set(Board* board, Pos pos, Piece* piece) {
     bounds_check(board->size, pos);
-
-    if (piece == NULL) {
-        if (board_get(board, pos)) {
-            //make changes
-            //remove piece from array by setting its spot to null
-            //reduce num pieces by 1
-            //free the piece
-        }
-        board->matrix[pos.r][pos.c] = NULL;
-
-    } else {
-
-    }
-
-
-
-    unsigned char plen = board->plen;
-    piece_side side = piece->side;
-    if ((side == BLACK_SIDE && board->bpnum == plen) || 
-        (side == WHITE_SIDE && board->wpnum == plen)) {
-        fprintf(stderr, "Cannot add more pieces\n");
-        exit(1);
-    }
-    for (unsigned char i = 0; i < plen; i++) {
-        if (side == BLACK_SIDE) {
-            if (board->black_pieces[i] == NULL) {
-                board->black_pieces[i] = piece;
-                (board->bpnum)++;
-                break;
-            }
+    Piece* to_delete = board_get(board, pos);
+    if (to_delete) {
+        if (to_delete->side == WHITE_SIDE) {
+            piecelist_delete(board->white_pieces, to_delete);
         } else {
-            if (board->white_pieces[i] == NULL) {
-                board->white_pieces[i] = piece;
-                (board->wpnum)++;
-                break;
-            }
+            piecelist_delete(board->black_pieces, to_delete);
         }
     }
-    return true;
+    if (piece) {
+        if (piece->side == WHITE_SIDE) {
+            piecelist_insert(board->white_pieces, piece);
+        } else {
+            piecelist_insert(board->black_pieces, piece);
+        }
+        piece->position = pos; //in case
+    }
+    board->matrix[pos.r][pos.c] = piece;
 }
 
-void board_swap(Board* board, Cell* cell1, Pos pos1, Cell* cell2, Pos pos2) {
-    Cell* tmp_cell = cell1;
-    board->matrix[pos1.r][pos1.c] = cell2;
-    board->matrix[pos2.r][pos2.c] = tmp_cell;
-    if (cell2->piece) {
-        cell2->piece->position = pos1;
+void board_swap(Board* board, Pos pos1, Pos pos2) {
+    bounds_check(board->size, pos1);
+    bounds_check(board->size, pos2);
+    Piece* piece1 = board_get(board, pos1);
+    Piece* piece2 = board_get(board, pos2);
+    board->matrix[pos1.r][pos1.c] = piece2;
+    board->matrix[pos2.r][pos2.c] = piece1;
+    if (piece2) {
+        piece2->position = pos1; //in case
     }
-    if (tmp_cell->piece) {
-        tmp_cell->piece->position = pos2;
+    if (piece1) {
+        piece1->position = pos2; //in case
     }
 }
 
@@ -222,137 +194,130 @@ void board_flip(Board* board) {
         for (unsigned char c = 0; c < size; c++) {
             Pos pos = make_pos(r, c);
             Pos mirr_pos = make_pos(size - 1 - r, size - 1 - c);
-            Cell* cell = board_get(board, pos);
-            Cell* mirr_cell = board_get(board, mirr_pos);
-
-            board_swap(board, cell, pos, mirr_cell, mirr_pos);
+            board_swap(board, pos, mirr_pos);
         }
     }
-    if (board->direction == MOVING_UP) {
-        board->direction = MOVING_DOWN;
+    if (board->direction == WHITE_MOVING_UP) {
+        board->direction = BLACK_MOVING_UP;
     } else {
-        board->direction = MOVING_UP;
+        board->direction = WHITE_MOVING_UP;
     }
 }
 
-
-
-//Helper
-bool encounter(Board* board, piece_kind kind, piece_side side, 
-                                     Transformation transformation, Pos pos) {
-    char* transformations = transformation.transformations;
-    unsigned char max_repeat = transformation.max_repeat;
-    for (unsigned char i = 0; i < transformation.len; i += 2) {
-        char tr = transformations[i], tc = transformations[i + 1];
-        Pos curr_pos = pos;
-        for (unsigned char j = 0; j < max_repeat; j++) {
-            curr_pos.r += tr;
-            curr_pos.c += tc;
-            if (out_of_bounds(board->size, curr_pos)) {
-                break;
-            }
-            Cell* cell = board_get(board, curr_pos);
-            if (cell->type == EMPTY) {
-                continue;
-            }
-            if (cell->piece->side != side || cell->piece->kind != kind) {
-                break;
-            }
-            printf("%hhu %hhu\n", curr_pos.r, curr_pos.c);
-            printf("was here haha\n");
-            return true;
-        }
-    }
-    return false;
-}
-
-bool handle_kind(Board* board, piece_kind kind, move_direction direction, 
-                                piece_side side, bool* maybe_found, Pos pos) { 
-    piece_kind pk[6] = {PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING};
-    for (unsigned char i = 0; i < 6; i++) {
-        if (kind == pk[i]) {
-            if (maybe_found[i]) {
-                break;
-            }
-            maybe_found[i] = true;
-            if (kind == PAWN) {
-                if (direction == MOVING_UP) {
-                    if (encounter(board, kind, side, 
-                               ptransformation_get(MOVING_DOWN, true), pos)) {
-                        return true;
-                    }
-                } else {
-                    if (encounter(board, kind, side, 
-                                 ptransformation_get(MOVING_UP, true), pos)) {
-                        return true;
-                    } 
-                }
-            } else {
-                if (encounter(board, kind, side, transformation_get(kind), 
-                                                                       pos)) {
-                    return true;
-                }
-            }
-        }
-    }
-    return false;
-}
-
-//only check trajectories starting from the king
-//also these trajectories only have to be from pieces still on board
-//do not check the same piece trajectory twice
-bool square_targeted(Board* board, Pos pos, piece_side targeted) {
-    bool maybe_found[6] = {false}; 
-    unsigned char plen = board->plen;
-    move_direction direction = board->direction;
-    for (unsigned char i = 0; i < plen; i++) {
-        Piece* piece;
-        piece_side side;
-        if (targeted == WHITE_SIDE) {
-            piece = board->black_pieces[i];
-            side = BLACK_SIDE;
-        } else {
-            piece = board->white_pieces[i];
-            side = WHITE_SIDE;
-        }
-        if (piece == NULL) {
-            continue;
-        }
-        if (handle_kind(board, piece->kind, direction, side, maybe_found, 
-                                                                       pos)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-Pos king_pos_get(Board* board, piece_side side) {
-    unsigned char plen = board->plen;
-    Piece* piece;
-    for (unsigned char i = 0; i < plen; i++) {
-        if (side == WHITE_SIDE) {
-            piece = board->white_pieces[i]; 
-        } else {
-            piece = board->black_pieces[i]; 
-        }
-        if (piece->kind == KING) {
-            return piece->position;
-        }
-    }
-    fprintf(stderr, "King Not Found\n");
-    exit(1);
-}
- 
-bool check(Board* board, piece_side threatened) {
-    Pos king_pos;
-    if (threatened == WHITE_SIDE) {
-        king_pos = king_pos_get(board, WHITE_SIDE);
-    } else {
-        king_pos = king_pos_get(board, BLACK_SIDE);
-    }
-    return square_targeted(board, king_pos, threatened);
-    //be careful with case of king checking
-}
+////Helper
+//bool encounter(Board* board, piece_kind kind, side side, Pos pos, 
+//                                            Transformation transformation) {
+//    char* transformations = transformation.transformations;
+//    unsigned char max_repeat = transformation.max_repeat;
+//    for (unsigned char i = 0; i < transformation.len; i += 2) {
+//        char tr = transformations[i], tc = transformations[i + 1];
+//        Pos curr_pos = pos;
+//        for (unsigned char j = 0; j < max_repeat; j++) {
+//            curr_pos.r += tr;
+//            curr_pos.c += tc;
+//            if (out_of_bounds(board->size, curr_pos)) {
+//                break;
+//            }
+//            Piece* piece = board_get(board, curr_pos);
+//            if (piece == NULL) {
+//                continue;
+//            }
+//            if (piece->side != side || piece->kind != kind) {
+//                break;
+//            }
+//            return true;
+//        }
+//    }
+//    return false;
+//}
+//
+//bool handle_kind(Board* board, piece_kind kind, board_direction direction, 
+//                                side side, bool* maybe_found, Pos pos) { 
+//    piece_kind pk[6] = {PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING};
+//    for (unsigned char i = 0; i < 6; i++) {
+//        if (kind == pk[i]) {
+//            if (maybe_found[i]) {
+//                break;
+//            }
+//            maybe_found[i] = true;
+//            if (kind == PAWN) {
+//                if (direction == WHITE_MOVING_UP) {
+//                    if (encounter(board, kind, side, pos,
+//                        transformation_get(kind, CAPTURE, BLACK_MOVING_UP))) {
+//                        return true;
+//                    }
+//                } else {
+//                    if (encounter(board, kind, side, pos, 
+//                        transformation_get(kind, CAPTURE, WHITE_MOVING_UP))) {
+//                        return true;
+//                    } 
+//                }
+//            } else {
+//                if (encounter(board, kind, side, pos, 
+//                        transformation_get(kind, CAPTURE, WHITE_MOVING_UP))) { 
+//                    return true;
+//                }
+//            }
+//        }
+//    }
+//    return false;
+//}
+//
+////only check trajectories starting from the king
+////also these trajectories only have to be from pieces still on board
+////do not check the same piece trajectory twice
+//bool square_targeted(Board* board, Pos pos, piece_side targeted) {
+//    bool maybe_found[6] = {false}; 
+//    unsigned char plen = board->plen;
+//    move_direction direction = board->direction;
+//    for (unsigned char i = 0; i < plen; i++) {
+//        Piece* piece;
+//        piece_side side;
+//        if (targeted == WHITE_SIDE) {
+//            piece = board->black_pieces[i];
+//            side = BLACK_SIDE;
+//        } else {
+//            piece = board->white_pieces[i];
+//            side = WHITE_SIDE;
+//        }
+//        if (piece == NULL) {
+//            continue;
+//        }
+//        if (handle_kind(board, piece->kind, direction, side, maybe_found, 
+//                                                                       pos)) {
+//            return true;
+//        }
+//    }
+//    return false;
+//}
+//
+//Pos king_pos_get(Board* board, piece_side side) {
+//    unsigned char plen = board->plen;
+//    Piece* piece;
+//    for (unsigned char i = 0; i < plen; i++) {
+//        if (side == WHITE_SIDE) {
+//            piece = board->white_pieces[i]; 
+//        } else {
+//            piece = board->black_pieces[i]; 
+//        }
+//        if (piece->kind == KING) {
+//            return piece->position;
+//        }
+//    }
+//    fprintf(stderr, "King Not Found\n");
+//    exit(1);
+//}
+// 
+//bool check(Board* board, piece_side threatened) {
+//    Pos king_pos;
+//    if (threatened == WHITE_SIDE) {
+//        king_pos = king_pos_get(board, WHITE_SIDE);
+//    } else {
+//        king_pos = king_pos_get(board, BLACK_SIDE);
+//    }
+//    return square_targeted(board, king_pos, threatened);
+//    //be careful with case of king checking
+//}
 
 
 
