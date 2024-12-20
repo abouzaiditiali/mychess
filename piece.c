@@ -92,6 +92,10 @@ Transformation transformation_get(piece_kind kind, move_type move_type,
     }
 }
  
+void transformation_free(Transformation t) {
+    free(t.transformations);
+}
+
 Piecelist* piecelist_new() {
     Piecelist* piecelist = (Piecelist*)malloc(sizeof(Piecelist));
     malloc_check(piecelist);
