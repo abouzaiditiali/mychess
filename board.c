@@ -128,13 +128,13 @@ void board_show(Board* board) {
 }
 
 Piece* board_get(Board* board, Pos pos) {
-    bounds_check(pos);
+    bounds_check(pos.r, pos.c);
     Piece* piece = board->matrix[pos.r][pos.c];
     return piece;
 }
 
 void board_set(Board* board, Pos pos, Piece* piece) {
-    bounds_check(pos);
+    bounds_check(pos.r, pos.c);
     Piece* to_delete = board_get(board, pos);
     if (to_delete) {
         if (to_delete->side == WHITE_SIDE) {
@@ -155,8 +155,8 @@ void board_set(Board* board, Pos pos, Piece* piece) {
 }
 
 void board_swap(Board* board, Pos pos1, Pos pos2) {
-    bounds_check(pos1);
-    bounds_check(pos2);
+    bounds_check(pos1.r, pos1.c);
+    bounds_check(pos2.r, pos2.c);
     Piece* piece1 = board_get(board, pos1);
     Piece* piece2 = board_get(board, pos2);
     board->matrix[pos1.r][pos1.c] = piece2;
@@ -176,30 +176,14 @@ bool is_upper_case(char c) {
 
 //Helper
 piece_kind find_kind(char c) {
-    switch (c) {
-        case 'P':
-        case 'p':
-            return PAWN;
-        case 'R':
-        case 'r':
-            return ROOK;
-        case 'Q':
-        case 'q':
-            return QUEEN;
-        case 'K':
-        case 'k':
-            return KING;
-        case 'B':
-        case 'b':
-            return BISHOP;
-        case 'N':
-        case 'n':
-            return KNIGHT;
-        default: {
-            fprintf(stderr, "no kind matches to the character provided\n");
-            exit(1);
-        }
-    }
+    if (c == 'P' || c == 'p') return PAWN;
+    if (c == 'R' || c == 'r') return ROOK;
+    if (c == 'Q' || c == 'q') return QUEEN;
+    if (c == 'K' || c == 'k') return KING;
+    if (c == 'B' || c == 'b') return BISHOP;
+    if (c == 'N' || c == 'n') return KNIGHT;
+    fprintf(stderr, "No kind matches the character provided\n");
+    exit(1);
 }
 
 void place_piece(Board* board, char* call) {
@@ -242,7 +226,7 @@ void board_flip(Board* board) {
     }
 }
 
-//Helper
+//Helper (returns true if it finds the piece looked for)
 Piece* encounter(Board* board, piece_kind kind, side side, Pos pos, 
                                             Transformation transformation) {
     char* transformations = transformation.transformations;
@@ -282,9 +266,10 @@ Piece* handle_kind(Board* board, piece_kind kind, board_direction direction,
             maybe_found[i] = true;
             Transformation t;
             if (kind == PAWN && direction == WHITE_MOVING_UP) {
-                t = transformation_get(kind, CAPTURE, BLACK_MOVING_UP);
+                t = transformation_get(kind, BLACK_MOVING_UP, MOVED, CAPTURE);
+                //move status doesn't matter
             } else {
-                t = transformation_get(kind, CAPTURE, WHITE_MOVING_UP);
+                t = transformation_get(kind, WHITE_MOVING_UP, MOVED, CAPTURE);
             }
             Piece* piece = encounter(board, kind, side, pos, t);
             if (piece) {
@@ -307,12 +292,12 @@ bool kind_in_kinds(piece_kind kind, piece_kind* pk, unsigned char pklen) {
 }
 
 //Helper (returns first piece that targets, could be many)
-Piece* square_targeted(Board* board, Pos pos, side targeted, piece_kind* pk,
+Piece* square_targeted(Board* board, Pos pos, side targeting, piece_kind* pk,
                                                         unsigned char pklen) {
     bool maybe_found[6] = {false}; //6 max number of kinds
     board_direction direction = board->direction;
     Piece_entry* head;
-    if (targeted == WHITE_SIDE) {
+    if (targeting == BLACK_SIDE) {
         head = board->black_pieces->head;
     } else {
         head = board->white_pieces->head;
@@ -348,16 +333,20 @@ Pos kpos_get(Board* board, side kside) {
     fprintf(stderr, "King Not Found\n");
     exit(1);
 }
- 
-Piece* check(Board* board, side threatened) {
-    Pos kpos;
-    if (threatened == WHITE_SIDE) {
-        kpos = kpos_get(board, WHITE_SIDE);
+
+//Helper (get converse) 
+side opp_side(side side) {
+    if (side == WHITE_SIDE) {
+        return BLACK_SIDE;
     } else {
-        kpos = kpos_get(board, BLACK_SIDE);
+        return WHITE_SIDE;
     }
+}
+
+Piece* check(Board* board, side threatened) {
+    Pos kpos = kpos_get(board, threatened);
     piece_kind pk[5] = {ROOK, PAWN, BISHOP, KNIGHT, QUEEN};
-    return square_targeted(board, kpos, threatened, pk, 5);
+    return square_targeted(board, kpos, opp_side(threatened), pk, 5);
 }
 
 //Helper (assumes the two pos are on same line, t is always of length 2)
@@ -403,15 +392,6 @@ void fill_transformation(char* transformation, Pos from, Pos to) {
 void reverse_transformation(char* transformation) {
     transformation[0] = -transformation[0];
     transformation[1] = -transformation[1];
-}
-
-//Helper (get converse) 
-side opp_side(side side) {
-    if (side == WHITE_SIDE) {
-        return BLACK_SIDE;
-    } else {
-        return WHITE_SIDE;
-    }
 }
 
 //there is always only one piece that ever pins in each case
@@ -460,7 +440,61 @@ Piece* pin(Board* board, Piece* piece) {
     return NULL; //line is not empty between piece and the maybe-pinning pcs
 }
 
+//maybe use?
+void fill_transformation(char* transformation, Pos from, Pos to);
+void reverse_transformation(char* transformation);
+Piece* square_targeted(Board* board, Pos pos, side targeting, piece_kind* pk,
+                            unsigned char pklen);
 
+//Helper
+//pos and transformation are both the king's
+bool safe_escape(Board* board, Piece* checking, Pos pos, 
+                                              Transformation transformation) {
+    char* transformations = transformation.transformations;
+    unsigned char max_repeat = transformation.max_repeat; 
+    Pos curr_pos;
+    for (unsigned char i = 0; i < transformation.len; i += 2) {
+        char tr = transformations[i], tc = transformations[i + 1];
+        curr_pos = pos;
+        for (unsigned char j = 0; j < max_repeat; j++) {
+            curr_pos.r += tr;
+            curr_pos.c += tc;
+            if (curr_pos.r < 0 || curr_pos.r >= board_size || curr_pos.c < 0 ||
+                    curr_pos.c >= board_size) {
+                break;
+            }
+            Piece* piece = board_get(board, curr_pos);
+            if (!piece && piece->side == opp_side(checking->side)) {
+                break;
+            }
+            piece_kind pk[6] = {PAWN, BISHOP, KNIGHT, ROOK, QUEEN, KING};
+            if (square_targeted(board, curr_pos, checking->side, pk, 6)) {
+                break;
+            }
+            if (checking->kind == QUEEN || checking->kind == BISHOP ||
+                                                    checking->kind == ROOK) {
+                char* t = (char*)malloc(sizeof(char) * 2);
+                fill_transformation(t, pos, checking->position);
+                reverse_transformation(t);
+                Pos reversed_pos = pos_make(pos.r + t[0], pos.c + t[1]);
+                free(t);
+                return (!pos_cmp(reversed_pos, piece->pos));
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+bool checkmate(Board* board, side threatened) {
+    Piece* checking = check(board, threatened);
+    if (checking == NULL) {
+        return false;
+    }
+
+    //check if king can escape
+    //check if piece can be placed in between piece checking and king
+    //check if piece checking can be captured 
 
 
 

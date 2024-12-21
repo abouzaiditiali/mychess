@@ -57,8 +57,8 @@ Transformation copy_transformation(char* from, unsigned char len,
     return t;
 }
 
-Transformation transformation_get(piece_kind kind, move_type move_type, 
-                                                board_direction direction) {
+Transformation transformation_get(piece_kind kind, board_direction direction
+                                    piece_moved moved, move_type type) {
     char knight[16] = {-2, -1, -2, 1, -1, -2, -1, 2, 1, -2, 1, 2, 2, -1, 2, 1};
     char bishop[8] = {-1, -1, -1, 1, 1, -1, 1, 1};
     char queen[16] = {-1, -1, -1, 0, -1, 1, 0, -1, 0, 1, 1, -1, 1, 0, 1, 1};
@@ -69,9 +69,11 @@ Transformation transformation_get(piece_kind kind, move_type move_type,
     char king_castle_bu[4] = {0, -2, 0, 3};
     char king[16] = {-1, -1, -1, 0, -1, 1, 0, -1, 0, 1, 1, -1, 1, 0, 1, 1};
     char pawn_capture_wu[4] = {-1, -1, -1, 1};
-    char pawn_wu[2] = {-1, 0}; 
+    char pawn_wum[2] = {-1, 0}; 
+    char pawn_wun[2] = {-2, 0}; 
     char pawn_capture_bu[4] = {1, -1, 1, 1};
-    char pawn_bu[2] = {1, 0}; 
+    char pawn_bum[2] = {1, 0}; 
+    char pawn_bun[2] = {2, 0}; 
     switch (kind) {
         case KNIGHT:
             return copy_transformation(knight, 16, 1);
@@ -80,7 +82,7 @@ Transformation transformation_get(piece_kind kind, move_type move_type,
         case QUEEN:
             return copy_transformation(queen, 16, 7);
         case ROOK: {
-            if (move_type == CASTLE) {
+            if (move_type == CASTLE && moved == NOT_MOVED) {
                 if (direction == WHITE_MOVING_UP) {
                     return copy_transformation(rook_castle_wu, 4, 1);
                 } else {
@@ -90,7 +92,7 @@ Transformation transformation_get(piece_kind kind, move_type move_type,
             return copy_transformation(rook, 8, 7);
         }
         case KING: {
-            if (move_type == CASTLE) {
+            if (move_type == CASTLE && moved == NOT_MOVED) {
                 if (direction == WHITE_MOVING_UP) {
                     return copy_transformation(king_castle_wu, 4, 1);
                 } else {
@@ -99,15 +101,23 @@ Transformation transformation_get(piece_kind kind, move_type move_type,
             }
             return copy_transformation(king, 16, 1);
         }
-        case PAWN: {
+        case PAWN: { //these are in relation to white
             if (direction == WHITE_MOVING_UP) {
                 if (move_type != CAPTURE && move_type != EN_PASSANT) {
-                    return copy_transformation(pawn_wu, 2, 2);
+                    if (moved == MOVED) {
+                        return copy_transformation(pawn_wum, 2, 1);
+                    } else {
+                        return copy_transformation(pawn_wun, 2, 1);
+                    }
                 }
                 return copy_transformation(pawn_capture_wu, 4, 1);
             } else {
                 if (move_type != CAPTURE && move_type != EN_PASSANT) {
-                    return copy_transformation(pawn_bu, 2, 2);
+                    if (moved == MOVED) { 
+                        return copy_transformation(pawn_bum, 2, 1);
+                    } else {
+                        return copy_transformation(pawn_bun, 2, 1);
+                    }
                 }
                 return copy_transformation(pawn_capture_bu, 4, 1);
             }

@@ -7,15 +7,8 @@ Pos pos_make(unsigned char r, unsigned char c) {
     return pos;
 }
 
-Square square_make(char c, unsigned char r) {
-    Square square;
-    square.r = r;
-    square.c = c;
-    return square;
-}
-
 Square pos_convert(Pos pos, board_direction direction) {
-    bounds_check(pos);
+    bounds_check(pos.r, pos.c);
     if (direction == WHITE_MOVING_UP) {
         return square_make('a' + pos.c, board_size - pos.r);
     } else {
@@ -23,32 +16,29 @@ Square pos_convert(Pos pos, board_direction direction) {
     }
 }
 
+bool pos_cmp(Pos pos1, Pos pos2) {
+    return pos1.r == pos2.r && pos1.c == pos2.c;
+}
+
+Square square_make(char file, unsigned char rank) {
+    Square square;
+    square.file = file;
+    square.rank = rank;
+    return square;
+}
+
 Pos square_convert(Square square, board_direction direction) {
     Pos pos;
     if (direction == WHITE_MOVING_UP) {
-        pos = pos_make(board_size - square.r, square.c - 'a');
+        pos = pos_make(board_size - square.rank, square.file - 'a');
     } else {
-        pos = pos_make(square.r - 1, 'a' + board_size - 1 - square.c);
+        pos = pos_make(square.rank - 1, 'a' + board_size - 1 - square.file);
     }
-    bounds_check(pos);
+    bounds_check(pos.r, pos.c);
     return pos;
 }
 
 void square_show(Square square) {
-    printf("%c%hhu", square.c, square.r);
-}
-
-void bounds_check(Pos pos) {
-    if (pos.r < 0 || pos.r >= board_size || pos.c < 0 || pos.c >= board_size) {
-        fprintf(stderr, "Position is out of bounds\n");
-        exit(1);
-    }
-}
-
-void malloc_check(void* p) {
-    if (p == NULL) {
-        fprintf(stderr, "Memory allocation failed\n");
-        exit(1);
-    }
+    printf("%c%hhu", square.file, square.rank);
 }
 

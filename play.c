@@ -1,10 +1,11 @@
 #include "board.h"
 
 int main() {
-    Board* board = board_new(WHITE_MOVING_UP, 
-                             STANDARD_POSITION);
-    //place_piece(board, "ke4");
-    //place_piece(board, "Bc6");
+    Board* board = board_new(BLACK_MOVING_UP, 
+                             EMPTY_BOARD);
+    place_piece(board, "ke4");
+    place_piece(board, "Bc6");
+    place_piece(board, "nd5");
 
     board_show(board);
 
