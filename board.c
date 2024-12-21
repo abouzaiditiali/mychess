@@ -2,38 +2,35 @@
 
 //Helper
 void set_standard_position(Board* board) {
-    unsigned char size = board->size;
-    for (unsigned char c = 0; c < size; c++) {
-        board_set(board, make_pos(1, c), 
-                  piece_new(PAWN, BLACK_SIDE, NOT_MOVED, make_pos(1, c)));
-        board_set(board, make_pos(6, c), 
-                  piece_new(PAWN, WHITE_SIDE, NOT_MOVED, make_pos(6, c)));
+    for (unsigned char c = 0; c < board_size; c++) {
+        board_set(board, pos_make(1, c), 
+                  piece_new(PAWN, BLACK_SIDE, NOT_MOVED, pos_make(1, c)));
+        board_set(board, pos_make(6, c), 
+                  piece_new(PAWN, WHITE_SIDE, NOT_MOVED, pos_make(6, c)));
     }
     piece_kind pk[8] = {ROOK, ROOK, KNIGHT, KNIGHT, 
                         BISHOP, BISHOP, QUEEN, KING};
     unsigned char positions[8] = {0, 7, 1, 6, 2, 5, 3, 4};
     for (unsigned char i = 0; i < 8; i++) {
-        board_set(board, make_pos(0, positions[i]),
-          piece_new(pk[i], BLACK_SIDE, NOT_MOVED, make_pos(0, positions[i])));
-        board_set(board, make_pos(7, positions[i]),
-          piece_new(pk[i], WHITE_SIDE, NOT_MOVED, make_pos(7, positions[i])));
+        board_set(board, pos_make(0, positions[i]),
+          piece_new(pk[i], BLACK_SIDE, NOT_MOVED, pos_make(0, positions[i])));
+        board_set(board, pos_make(7, positions[i]),
+          piece_new(pk[i], WHITE_SIDE, NOT_MOVED, pos_make(7, positions[i])));
     }
 }
 
 Board* board_new(board_direction direction, start_position position) {
-    unsigned char size = 8;
     Board* board = (Board*)malloc(sizeof(Board));
     malloc_check(board);
-    board->matrix = (Piece***)malloc(sizeof(Piece**) * size);
+    board->matrix = (Piece***)malloc(sizeof(Piece**) * board_size);
     malloc_check(board->matrix);
-    for (unsigned char r = 0; r < size; r++) {
-        board->matrix[r] = (Piece**)malloc(sizeof(Piece*) * size);
+    for (unsigned char r = 0; r < board_size; r++) {
+        board->matrix[r] = (Piece**)malloc(sizeof(Piece*) * board_size);
         malloc_check(board->matrix[r]);
-        for (unsigned char c = 0; c < size; c++) {
+        for (unsigned char c = 0; c < board_size; c++) {
             board->matrix[r][c] = NULL;
         }
     }
-    board->size = size;
     board->direction = WHITE_MOVING_UP;
     board->white_pieces = piecelist_new();
     board->black_pieces = piecelist_new();
@@ -49,8 +46,7 @@ Board* board_new(board_direction direction, start_position position) {
 void board_free(Board* board) {
     piecelist_free(board->white_pieces);
     piecelist_free(board->black_pieces);
-    unsigned char size = board->size;
-    for (unsigned char r = 0; r < size; r++) {
+    for (unsigned char r = 0; r < board_size; r++) {
         free(board->matrix[r]);
     }
     free(board->matrix);
@@ -83,23 +79,11 @@ char maybe_upp(side side, char c) {
 
 //Helper
 char convert_piece_to_char(Piece* piece) {
+    char pk_chars[] = {'p', 'b', 'n', 'r', 'q', 'k'};
     if (piece == NULL) {
         return '.';
     }
-    switch (piece->kind) {
-        case PAWN:
-            return maybe_upp(piece->side, 'p');
-        case KNIGHT:
-            return maybe_upp(piece->side, 'n');
-        case BISHOP:
-            return maybe_upp(piece->side, 'b');
-        case ROOK:
-            return maybe_upp(piece->side, 'r');
-        case QUEEN:
-            return maybe_upp(piece->side, 'q');
-        case KING:
-            return maybe_upp(piece->side, 'k');
-    }
+    return maybe_upp(piece->side, pk_chars[piece->kind]);
 }
 
 void board_show(Board* board) {
@@ -121,7 +105,7 @@ void board_show(Board* board) {
             }
             printf(" |");
             for (unsigned char j = 0; j < 8; j++) {
-                Piece* piece = board_get(board, make_pos(i - curr, j));
+                Piece* piece = board_get(board, pos_make(i - curr, j));
                 char c = convert_piece_to_char(piece);
                 printf(" %c |", c);
             }
@@ -137,24 +121,20 @@ void board_show(Board* board) {
     }
     print_chars(board->direction);
     printf("\n");
+    printf("%hhu white pieces still on board:\n", board->white_pieces->len);
+    piecelist_show(board->white_pieces, board->direction);
+    printf("%hhu black pieces still on board:\n", board->black_pieces->len);
+    piecelist_show(board->black_pieces, board->direction);
 }
 
-//Helper 
-void bounds_check(unsigned char size, Pos pos) {
-    if (pos.r < 0 || pos.r >= size || pos.c < 0 || pos.c >= size) {
-        fprintf(stderr, "Tried to access position outside of board\n");
-        exit(1);
-    }
-}
- 
 Piece* board_get(Board* board, Pos pos) {
-    bounds_check(board->size, pos);
+    bounds_check(pos);
     Piece* piece = board->matrix[pos.r][pos.c];
     return piece;
 }
 
 void board_set(Board* board, Pos pos, Piece* piece) {
-    bounds_check(board->size, pos);
+    bounds_check(pos);
     Piece* to_delete = board_get(board, pos);
     if (to_delete) {
         if (to_delete->side == WHITE_SIDE) {
@@ -175,8 +155,8 @@ void board_set(Board* board, Pos pos, Piece* piece) {
 }
 
 void board_swap(Board* board, Pos pos1, Pos pos2) {
-    bounds_check(board->size, pos1);
-    bounds_check(board->size, pos2);
+    bounds_check(pos1);
+    bounds_check(pos2);
     Piece* piece1 = board_get(board, pos1);
     Piece* piece2 = board_get(board, pos2);
     board->matrix[pos1.r][pos1.c] = piece2;
@@ -222,68 +202,36 @@ piece_kind find_kind(char c) {
     }
 }
 
-
 void place_piece(Board* board, char* call) {
-    char ks, c, r, m;
-    side side;
-    piece_kind kind;
-    Pos pos;
-    piece_moved moved;
-    if (sscanf(call, "%c%c%c%c", &ks, &c, &r, &m) == 4) {
-        kind = find_kind(ks);
-        if (is_upper_case(ks)) {
-            side = WHITE_SIDE;
-        } else {
-            side = BLACK_SIDE;
-        }
-        if (c < 'a' || c > 'h' || r - '0' < 1 || r - '0' > board->size) {
-            fprintf(stderr, "Invalid column\n");
-            exit(1);
-        }
-        if (board->direction == WHITE_MOVING_UP) {
-            pos = make_pos(board->size - (r - '0'), c - 'a');
-        } else {
-            pos = make_pos((r - '0') - 1, 'h' - c);
-        }
-        if (m != 'm' && m != 'n') {
-            fprintf(stderr, "Move status undetermined\n");
-            exit(1);
-        }
-        if (m == 'm') {
-            moved = MOVED;
-        } else {
-            moved = NOT_MOVED;
-        }
-    } else if (sscanf(call, "%c%c%c", &ks, &c, &r) == 3) {
-        kind = find_kind(ks);
-        if (is_upper_case(ks)) {
-            side = WHITE_SIDE;
-        } else {
-            side = BLACK_SIDE;
-        }
-        if (c < 'a' || c > 'h' || r - '0' < 1 || r - '0' > board->size) {
-            fprintf(stderr, "Invalid column\n");
-            exit(1);
-        }
-        if (board->direction == WHITE_MOVING_UP) {
-            pos = make_pos(board->size - (r - '0'), c - 'a');
-        } else {
-            pos = make_pos((r - '0') - 1, 'h' - c);
-        }
-        moved = MOVED;
-    } else {
+    char ks, c, m;
+    unsigned char r;
+    unsigned char count = sscanf(call, "%c%c%hhu%c", &ks, &c, &r, &m);
+    if (count < 3) {
         fprintf(stderr, "Invalid call\n");
         exit(1);
+    }
+    piece_kind kind = find_kind(ks);
+    side side;
+    if (is_upper_case(ks)) {
+        side = WHITE_SIDE;
+    } else {
+        side = BLACK_SIDE;
+    }
+    Pos pos = square_convert(square_make(c, r), board->direction); 
+    piece_moved moved = MOVED;
+    if (count == 4) {
+        if (m == 'n') {
+            moved = NOT_MOVED;
+        }
     }
     board_set(board, pos, piece_new(kind, side, moved, pos));
 }
 
 void board_flip(Board* board) {
-    unsigned char size = board->size;
-    for (unsigned char r = 0; r < (size / 2); r++) {
-        for (unsigned char c = 0; c < size; c++) {
-            Pos pos = make_pos(r, c);
-            Pos mirr_pos = make_pos(size - 1 - r, size - 1 - c);
+    for (unsigned char r = 0; r < (board_size / 2); r++) {
+        for (unsigned char c = 0; c < board_size; c++) {
+            Pos pos = pos_make(r, c);
+            Pos mirr_pos = pos_make(board_size - 1 - r, board_size - 1 - c);
             board_swap(board, pos, mirr_pos);
         }
     }
@@ -295,21 +243,19 @@ void board_flip(Board* board) {
 }
 
 //Helper
-bool encounter(Board* board, piece_kind kind, side side, Pos pos, 
+Piece* encounter(Board* board, piece_kind kind, side side, Pos pos, 
                                             Transformation transformation) {
     char* transformations = transformation.transformations;
-    unsigned char max_repeat = transformation.max_repeat, size = board->size;
+    unsigned char max_repeat = transformation.max_repeat; 
     Pos curr_pos;
-    
     for (unsigned char i = 0; i < transformation.len; i += 2) {
         char tr = transformations[i], tc = transformations[i + 1];
         curr_pos = pos;
-        
         for (unsigned char j = 0; j < max_repeat; j++) {
             curr_pos.r += tr;
             curr_pos.c += tc;
-            if (curr_pos.r < 0 || curr_pos.r >= size || curr_pos.c < 0 ||
-                    curr_pos.c >= size) {
+            if (curr_pos.r < 0 || curr_pos.r >= board_size || curr_pos.c < 0 ||
+                    curr_pos.c >= board_size) {
                 break;
             }
             Piece* piece = board_get(board, curr_pos);
@@ -319,14 +265,14 @@ bool encounter(Board* board, piece_kind kind, side side, Pos pos,
             if (piece->side != side || piece->kind != kind) {
                 break;
             }
-            return true;
+            return piece;
         }
     }
-    return false;
+    return NULL;
 }
 
-//Helper
-bool handle_kind(Board* board, piece_kind kind, board_direction direction, 
+//Helper (only check pieces still on board, and not check the same piece twice)
+Piece* handle_kind(Board* board, piece_kind kind, board_direction direction, 
                       side side, bool* maybe_found, Pos pos, piece_kind* pk) { 
     for (unsigned char i = 0; i < 6; i++) {
         if (kind == pk[i]) {
@@ -334,24 +280,20 @@ bool handle_kind(Board* board, piece_kind kind, board_direction direction,
                 break;
             }
             maybe_found[i] = true;
+            Transformation t;
             if (kind == PAWN && direction == WHITE_MOVING_UP) {
-                Transformation t = transformation_get(kind, CAPTURE, 
-                                                            BLACK_MOVING_UP);
-                if (encounter(board, kind, side, pos, t)) {
-                    transformation_free(t);
-                    return true;
-                }
+                t = transformation_get(kind, CAPTURE, BLACK_MOVING_UP);
             } else {
-                Transformation t = transformation_get(kind, CAPTURE, 
-                                                          WHITE_MOVING_UP);
-                if (encounter(board, kind, side, pos, t)) {
-                    transformation_free(t);
-                    return true;
-                } 
+                t = transformation_get(kind, CAPTURE, WHITE_MOVING_UP);
+            }
+            Piece* piece = encounter(board, kind, side, pos, t);
+            if (piece) {
+                transformation_free(t);
+                return piece;
             }
         }
     }
-    return false;
+    return NULL;
 }
 
 //Helper 
@@ -364,10 +306,10 @@ bool kind_in_kinds(piece_kind kind, piece_kind* pk, unsigned char pklen) {
     return false;
 }
 
-//Helper
-bool square_targeted(Board* board, Pos pos, side targeted, piece_kind* pk,
+//Helper (returns first piece that targets, could be many)
+Piece* square_targeted(Board* board, Pos pos, side targeted, piece_kind* pk,
                                                         unsigned char pklen) {
-    bool maybe_found[6] = {false}; 
+    bool maybe_found[6] = {false}; //6 max number of kinds
     board_direction direction = board->direction;
     Piece_entry* head;
     if (targeted == WHITE_SIDE) {
@@ -379,14 +321,15 @@ bool square_targeted(Board* board, Pos pos, side targeted, piece_kind* pk,
         piece_kind kind = head->piece->kind;
         if (kind_in_kinds(kind, pk, pklen)) {
             side side = head->piece->side;
-            if (handle_kind(board, kind, direction, side, maybe_found, pos, 
-                                                                        pk)) {
-                return true;
+            Piece* piece = handle_kind(board, kind, direction, side, 
+                                                        maybe_found, pos, pk); 
+            if (piece) {
+                return piece;
             }
         }
         head = head->next;
     }
-    return false;
+    return NULL;
 }
 
 //Helper
@@ -406,7 +349,7 @@ Pos kpos_get(Board* board, side kside) {
     exit(1);
 }
  
-bool check(Board* board, side threatened) {
+Piece* check(Board* board, side threatened) {
     Pos kpos;
     if (threatened == WHITE_SIDE) {
         kpos = kpos_get(board, WHITE_SIDE);
@@ -471,7 +414,8 @@ side opp_side(side side) {
     }
 }
 
-bool pin(Board* board, Piece* piece) {
+//there is always only one piece that ever pins in each case
+Piece* pin(Board* board, Piece* piece) {
     if (piece == NULL) {
         fprintf(stderr, "Empty cell cannot be pinned\n");
         exit(1);
@@ -484,7 +428,7 @@ bool pin(Board* board, Piece* piece) {
     Pos ppos = piece->position;
     if (!(kpos.r == ppos.r) && !(kpos.c == ppos.c) && 
                !(abs(kpos.r - ppos.r) == abs(kpos.c - ppos.c))) {
-        return false; //not in same line
+        return NULL; //not in same line
     }
     Transformation t;
     t.len = 2;
@@ -502,17 +446,18 @@ bool pin(Board* board, Piece* piece) {
     }
     if (!encounter(board, KING, piece->side, ppos, t)) {
         transformation_free(t);
-        return false; //line between king and piece is not empty
+        return NULL; //line between king and piece is not empty
     }
     reverse_transformation(t.transformations); //checking opp direction now
     for (unsigned char i = 0; i < 2; i++) {
-        if (encounter(board, pk[i], opp_side(piece->side), ppos, t)) {
+        Piece* pinning = encounter(board, pk[i], opp_side(piece->side), ppos, t);
+        if (pinning) {
             transformation_free(t);
-            return true;
+            return pinning;
         }
     }
     transformation_free(t);
-    return false; //line is not empty between piece and the maybe-pinning pcs
+    return NULL; //line is not empty between piece and the maybe-pinning pcs
 }
 
 

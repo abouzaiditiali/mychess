@@ -3,15 +3,9 @@
 
 #include "board.h"
 
-typedef enum {
-    EN_PASSANT,
-    CAPTURE,
-    CASTLE,
-    NO_CAPTURE
-} move_type;
-
 typedef struct {
     Pos from, to;
+    move_type type;
 } Move;
 
 typedef struct Move_entry Move_entry;

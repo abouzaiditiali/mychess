@@ -6,7 +6,6 @@
 
 typedef struct {
     Piece*** matrix;  
-    unsigned char size;
     board_direction direction;
     Piecelist *white_pieces, *black_pieces;
 } Board;
@@ -27,19 +26,20 @@ Piece* board_get(Board* board, Pos pos);
 
 void board_set(Board* board, Pos pos, Piece* piece);
 
+//for interactive testing only
+void place_piece(Board* board, char* call);
+
 void board_swap(Board* board, Pos pos1, Pos pos2);
 
 void board_flip(Board* board);
 
-bool check(Board* board, side threatened);
+Piece* check(Board* board, side threatened);
 
-bool pin(Board* board, Piece* piece);
+Piece* pin(Board* board, Piece* piece);
 
 bool checkmate(Board* board);
 
 bool stalemate(Board* board);
-
-void place_piece(Board* board, char* call);
 
 
 #endif /* BOARD_H */

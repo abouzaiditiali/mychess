@@ -10,6 +10,35 @@ Piece* piece_new(piece_kind kind, side side, piece_moved moved, Pos pos) {
     return piece;
 }
 
+void piece_show(Piece* piece, board_direction direction) {
+    if (piece == NULL) {
+        fprintf(stderr, "Cannot show an empty cell\n");
+        exit(1);
+    }
+    char* kind;
+    char* pk_strings[] = {"PAWN", "BISHOP", "KNIGHT", "ROOK", "QUEEN", "KING"};
+    kind = pk_strings[piece->kind];
+    char* side; 
+    if (piece->side == WHITE_SIDE) {
+        side = "WHITE";
+    } else {
+        side = "BLACK";
+    }
+    char* moved;
+    if (piece->moved == MOVED) {
+        moved = "MOVED";
+    } else {
+        moved = "NOT MOVED";
+    }
+    printf("Kind: %s\n", kind);
+    printf("Side: %s\n", side);
+    printf("Position: ");
+    square_show(pos_convert(piece->position, direction));
+    printf("\n");
+    printf("Status: %s\n", moved);
+    printf("\n");
+}
+
 void piece_free(Piece* piece) {
     free(piece);
 }
@@ -30,63 +59,57 @@ Transformation copy_transformation(char* from, unsigned char len,
 
 Transformation transformation_get(piece_kind kind, move_type move_type, 
                                                 board_direction direction) {
+    char knight[16] = {-2, -1, -2, 1, -1, -2, -1, 2, 1, -2, 1, 2, 2, -1, 2, 1};
+    char bishop[8] = {-1, -1, -1, 1, 1, -1, 1, 1};
+    char queen[16] = {-1, -1, -1, 0, -1, 1, 0, -1, 0, 1, 1, -1, 1, 0, 1, 1};
+    char rook_castle_wu[4] = {0, -2, 0, 3}; //whichever is in bounds
+    char rook_castle_bu[4] = {0, 2, 0, -3}; //whichever is in bounds
+    char rook[8] = {-1, 0, 0, -1, 0, 1, 1, 0};
+    char king_castle_wu[4] = {0, -3, 0, 2};
+    char king_castle_bu[4] = {0, -2, 0, 3};
+    char king[16] = {-1, -1, -1, 0, -1, 1, 0, -1, 0, 1, 1, -1, 1, 0, 1, 1};
+    char pawn_capture_wu[4] = {-1, -1, -1, 1};
+    char pawn_wu[2] = {-1, 0}; 
+    char pawn_capture_bu[4] = {1, -1, 1, 1};
+    char pawn_bu[2] = {1, 0}; 
     switch (kind) {
-        case KNIGHT: {
-            char tn[16] = {-2, -1, -2, 1, -1, -2, -1, 2, 
-                           1, -2, 1, 2, 2, -1, 2, 1};
-            return copy_transformation(tn, 16, 1);
-        }
-        case BISHOP: {
-            char tb[8] = {-1, -1, -1, 1, 1, -1, 1, 1};
-            return copy_transformation(tb, 8, 7);
-        }
-        case QUEEN: {
-            char tq[16] = {-1, -1, -1, 0, -1, 1, 0, -1, 
-                           0, 1, 1, -1, 1, 0, 1, 1};
-            return copy_transformation(tq, 16, 7);
-        }
+        case KNIGHT:
+            return copy_transformation(knight, 16, 1);
+        case BISHOP:
+            return copy_transformation(bishop, 8, 7);
+        case QUEEN:
+            return copy_transformation(queen, 16, 7);
         case ROOK: {
             if (move_type == CASTLE) {
                 if (direction == WHITE_MOVING_UP) {
-                    char trcu[4] = {0, -2, 0, 3}; //whichever is in bounds
-                    return copy_transformation(trcu, 4, 1);
+                    return copy_transformation(rook_castle_wu, 4, 1);
                 } else {
-                    char trcd[4] = {0, 2, 0, -3}; //whichever is in bounds
-                    return copy_transformation(trcd, 4, 1);
+                    return copy_transformation(rook_castle_bu, 4, 1);
                 }
             }
-            char tr[8] = {-1, 0, 0, -1, 0, 1, 1, 0};
-            return copy_transformation(tr, 8, 7);
+            return copy_transformation(rook, 8, 7);
         }
         case KING: {
             if (move_type == CASTLE) {
                 if (direction == WHITE_MOVING_UP) {
-                    char tkcu[4] = {0, -3, 0, 2};
-                    return copy_transformation(tkcu, 4, 1);
+                    return copy_transformation(king_castle_wu, 4, 1);
                 } else {
-                    char tkcd[4] = {0, -2, 0, 3};
-                    return copy_transformation(tkcd, 4, 1);
+                    return copy_transformation(king_castle_bu, 4, 1);
                 }
             }
-            char tk[16] = {-1, -1, -1, 0, -1, 1, 0, -1, 
-                           0, 1, 1, -1, 1, 0, 1, 1};
-            return copy_transformation(tk, 16, 1);
+            return copy_transformation(king, 16, 1);
         }
         case PAWN: {
             if (direction == WHITE_MOVING_UP) {
                 if (move_type != CAPTURE && move_type != EN_PASSANT) {
-                    char tpu[2] = {-1, 0}; 
-                    return copy_transformation(tpu, 2, 2);
+                    return copy_transformation(pawn_wu, 2, 2);
                 }
-                char tpcu[4] = {-1, -1, -1, 1};
-                return copy_transformation(tpcu, 4, 1);
+                return copy_transformation(pawn_capture_wu, 4, 1);
             } else {
                 if (move_type != CAPTURE && move_type != EN_PASSANT) {
-                    char tpd[2] = {1, 0}; 
-                    return copy_transformation(tpd, 2, 2);
+                    return copy_transformation(pawn_bu, 2, 2);
                 }
-                char tpcd[4] = {1, -1, 1, 1};
-                return copy_transformation(tpcd, 4, 1);
+                return copy_transformation(pawn_capture_bu, 4, 1);
             }
         }
     }
@@ -102,6 +125,17 @@ Piecelist* piecelist_new() {
     piecelist->head = NULL;
     piecelist->len = 0;
     return piecelist;
+}
+
+void piecelist_show(Piecelist* piecelist, board_direction direction) {
+    Piece_entry* head = piecelist->head;
+    if (head) {
+        while (head) {
+            piece_show(head->piece, direction);
+            head = head->next;
+        }
+    }
+    printf("\n");
 }
 
 void piecelist_insert(Piecelist* piecelist, Piece* piece) {

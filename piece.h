@@ -5,16 +5,12 @@
 
 
 typedef enum {
-    PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING
+    PAWN, BISHOP, KNIGHT, ROOK, QUEEN, KING
 } piece_kind;
 
 typedef enum {
     BLACK_SIDE, WHITE_SIDE
 } side;
-
-typedef enum {
-    WHITE_MOVING_UP, BLACK_MOVING_UP
-} board_direction;
 
 typedef enum {
     MOVED, NOT_MOVED
@@ -33,7 +29,7 @@ typedef struct {
 } Piece;
 
 typedef enum {
-    EN_PASSANT, CAPTURE, CASTLE, NO_CAPTURE
+    EN_PASSANT, CAPTURE, CASTLE, PAWN_PROMOTION, NO_CAPTURE
 } move_type;
 
 typedef struct Piece_entry Piece_entry;
@@ -50,6 +46,8 @@ typedef struct {
 
 Piece* piece_new(piece_kind kind, side side, piece_moved moved, Pos pos);
 
+void piece_show(Piece* piece, board_direction direction);
+
 void piece_free(Piece* piece);
 
 Transformation transformation_get(piece_kind kind, move_type type, 
@@ -58,6 +56,8 @@ Transformation transformation_get(piece_kind kind, move_type type,
 void transformation_free(Transformation t);
 
 Piecelist* piecelist_new();
+
+void piecelist_show(Piecelist* piecelist, board_direction direction);
 
 void piecelist_insert(Piecelist* piecelist, Piece* piece);
 
