@@ -11,4 +11,6 @@ void bounds_check(unsigned char r, unsigned char c);
 
 void malloc_check(void* p);
 
+void pointer_check(void* p);
+
 #endif /* UTILS_H */

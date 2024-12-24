@@ -3,40 +3,24 @@
 
 #include "move.h"
 
-
-typedef enum {
-    BLACKS_TURN,
-    WHITES_TURN
+typedef enum { BLACKS_TURN, WHITES_TURN
 } game_turn;
-
-typedef enum {
-    IN_PROGRESS,
-    DRAW,
-    BLACK_WIN,
-    WHITE_WIN
+typedef enum { IN_PROGRESS, DRAW, BLACK_WIN, WHITE_WIN
 } game_outcome;
 
-typedef struct Game Game;
-struct Game {
+typedef struct {
     Board* board;
-    Piece *white_pieces, *black_pieces;
     Movestack* moves;
     game_turn turn;
-    Game* prev;
-};
-
+} Game;
 
 Game* game_new();
-
+void game_set(Game* game);
 void game_free(Game* game);
 
-bool move(Game* game, Move move);
-
-move_type move_type(Game* game, Move move);
-
+bool move(Game* game, Square from, Square to);
 void undo(Game* game);
 
 game_outcome outcome(Game* game);
-
 
 #endif /* LOGIC_H */

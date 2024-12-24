@@ -14,3 +14,10 @@ void malloc_check(void* p) {
     }
 }
 
+void pointer_check(void* p) {
+    if (p == NULL) {
+        fprintf(stderr, "Function cannot accept null pointer\n");
+        exit(1);
+    }
+}
+

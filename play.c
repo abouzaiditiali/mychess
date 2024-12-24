@@ -1,15 +1,12 @@
-#include "board.h"
+#include "logic.h"
 
 int main() {
-    Board* board = board_new(BLACK_MOVING_UP, 
-                             EMPTY_BOARD);
-    place_piece(board, "ke4");
-    place_piece(board, "Bc6");
-    place_piece(board, "nd5");
+    Game* game = game_new();
+    game_set(game);
 
-    board_show(board);
+    board_show(game->board, BLACKS_PERSPECTIVE);
 
-    board_free(board);
+    game_free(game);
     return 0;
 }
 

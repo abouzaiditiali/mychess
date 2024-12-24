@@ -4,28 +4,27 @@
 #include "board.h"
 
 typedef struct {
-    Pos from, to;
+    Square from, to;
     move_type type;
+    union {
+        piece_kind captured; //only if en-passant, pp with capture, capture
+    };
 } Move;
 
-typedef struct Move_entry Move_entry;
-struct Move_entry {
+typedef struct Move_entry {
     Move move;
-    Move_entry *prev, *next; 
-};
+    struct Move_entry *prev, *next; 
+} Move_entry;
 
 typedef struct {
     Move_entry *head, *tail;
     unsigned char len;
 } Movestack;
 
-
+Move move_make(Square from, Square to, move_type type, piece_kind captured);
 Movestack* movestack_new();
-
-void movestack_add(Movestack* movestack, Move move); //add at the end
-
-void movestack_pop(Movestack* movestack); //pop the last
-
-Move last_move(Movestack* movestack);
+void movestack_add(Movestack* s, Move move);
+Move movestack_pop(Movestack* s);
+void movestack_free(Movestack* s);
 
 #endif /* MOVE_H */

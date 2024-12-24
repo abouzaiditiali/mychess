@@ -1,19 +1,21 @@
 #include "pos.h"
 
 Pos pos_make(unsigned char r, unsigned char c) {
-    Pos pos;
-    pos.r = r;
-    pos.c = c;
+    Pos pos = {r, c};
     return pos;
 }
 
-Square pos_convert(Pos pos, board_direction direction) {
-    bounds_check(pos.r, pos.c);
-    if (direction == WHITE_MOVING_UP) {
-        return square_make('a' + pos.c, board_size - pos.r);
-    } else {
-        return square_make('a' + board_size - 1 - pos.c, pos.r + 1);
+Pos pos_flip(Pos pos) {
+    return pos_make(board_size - 1 - pos.r, board_size - 1 - pos.c);
+}
+
+Square pos_convert(Pos pos, player_perspective perspective) {
+    Pos npos = pos;
+    if (perspective == BLACKS_PERSPECTIVE) {
+        npos = pos_flip(pos);
     }
+    return square_make('a' + npos.c, board_size - npos.r);
+    //return square_make('a' + board_size - 1 - pos.c, pos.r + 1);
 }
 
 bool pos_cmp(Pos pos1, Pos pos2) {
@@ -27,15 +29,11 @@ Square square_make(char file, unsigned char rank) {
     return square;
 }
 
-Pos square_convert(Square square, board_direction direction) {
-    Pos pos;
-    if (direction == WHITE_MOVING_UP) {
-        pos = pos_make(board_size - square.rank, square.file - 'a');
-    } else {
-        pos = pos_make(square.rank - 1, 'a' + board_size - 1 - square.file);
-    }
-    bounds_check(pos.r, pos.c);
+//returns pos in white's perspective
+Pos square_convert(Square square) {
+    Pos pos = pos_make(board_size - square.rank, square.file - 'a');
     return pos;
+    //pos = pos_make(square.rank - 1, 'a' + board_size - 1 - square.file);
 }
 
 void square_show(Square square) {
