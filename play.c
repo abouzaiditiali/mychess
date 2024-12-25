@@ -2,9 +2,8 @@
 
 int main() {
     Game* game = game_new();
-    game_set(game);
 
-    board_show(game->board, BLACKS_PERSPECTIVE);
+    board_show(game->board, WHITES_PERSPECTIVE);
 
     game_free(game);
     return 0;

@@ -12,6 +12,7 @@ typedef struct {
     Board* board;
     Movestack* moves;
     game_turn turn;
+    Translationlist* tl; //always of length 6 (there are 6 kinds)
 } Game;
 
 Game* game_new();

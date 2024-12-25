@@ -42,6 +42,230 @@ void piece_free(Piece* piece) {
     free(piece);
 }
 
+Translationlist* translationlist_new(piece_kind kind) {
+    Translationlist* tl = (Translationlist*)malloc(sizeof(Translationlist));
+    tl->kind = kind;
+    if (kind == PAWN) {
+        tl->len = 6;
+    } else if (kind == KNIGHT || kind == BISHOP || kind == ROOK || kind == QUEEN) {
+        tl->len = 1;
+    } else if (kind == KING) {
+        tl->len = 3;
+    } else {
+        fprintf(stderr, "Unrecognized kind\n");
+        exit(1);
+    }
+    tl->mtt = (MoveTypeTranslation**)malloc(sizeof(MoveTypeTranslation*) * tl->len);
+    if (kind == PAWN) {
+        //White Pawn Capture
+        tl->mtt[0] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
+        tl->mtt[0]->translations = (Translation*)malloc(sizeof(Translation) * 2);
+        tl->mtt[0]->translations[0] = (Translation){-1, -1};
+        tl->mtt[0]->translations[1] = (Translation){-1, 1};
+        tl->mtt[0]->trlen = 2;
+        tl->mtt[0]->max_repeat = 1;
+        tl->mtt[0]->type = (move_type*)malloc(sizeof(move_type) * 3);
+        tl->mtt[0]->type[0] = CAPTURE;
+        tl->mtt[0]->type[1] = PAWN_PROMOTION_CAPTURE;
+        tl->mtt[0]->type[2] = EN_PASSANT;
+        tl->mtt[0]->tylen = 3;
+        tl->mtt[0]->side = WHITE_SIDE;
+        //White Pawn No Capture
+        tl->mtt[1] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
+        tl->mtt[1]->translations = (Translation*)malloc(sizeof(Translation) * 1);
+        tl->mtt[1]->translations[0] = (Translation){-1, 0};
+        tl->mtt[1]->trlen = 1;
+        tl->mtt[1]->max_repeat = 1;
+        tl->mtt[1]->type = (move_type*)malloc(sizeof(move_type) * 2);
+        tl->mtt[1]->type[0] = NO_CAPTURE;
+        tl->mtt[1]->type[1] = PAWN_PROMOTION_NO_CAPTURE;
+        tl->mtt[1]->tylen = 2;
+        tl->mtt[1]->side = WHITE_SIDE;
+        //White Pawn Push by Two
+        tl->mtt[2] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
+        tl->mtt[2]->translations = (Translation*)malloc(sizeof(Translation) * 1);
+        tl->mtt[2]->translations[0] = (Translation){-2, 0};
+        tl->mtt[2]->trlen = 1;
+        tl->mtt[2]->max_repeat = 1;
+        tl->mtt[2]->type = (move_type*)malloc(sizeof(move_type) * 1);
+        tl->mtt[2]->type[0] = PAWN_PUSH_BY_TWO;
+        tl->mtt[2]->tylen = 1;
+        tl->mtt[2]->side = WHITE_SIDE;
+        //Black Pawn Capture
+        tl->mtt[3] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
+        tl->mtt[3]->translations = (Translation*)malloc(sizeof(Translation) * 2);
+        tl->mtt[3]->translations[0] = (Translation){1, -1};
+        tl->mtt[3]->translations[1] = (Translation){1, 1};
+        tl->mtt[3]->trlen = 2;
+        tl->mtt[3]->max_repeat = 1;
+        tl->mtt[3]->type = (move_type*)malloc(sizeof(move_type) * 3);
+        tl->mtt[3]->type[0] = CAPTURE;
+        tl->mtt[3]->type[1] = PAWN_PROMOTION_CAPTURE;
+        tl->mtt[3]->type[2] = EN_PASSANT;
+        tl->mtt[3]->tylen = 3;
+        tl->mtt[3]->side = BLACK_SIDE;
+        //Black Pawn No Capture
+        tl->mtt[4] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
+        tl->mtt[4]->translations = (Translation*)malloc(sizeof(Translation) * 1);
+        tl->mtt[4]->translations[0] = (Translation){1, 0};
+        tl->mtt[4]->trlen = 1;
+        tl->mtt[4]->max_repeat = 1;
+        tl->mtt[4]->type = (move_type*)malloc(sizeof(move_type) * 2);
+        tl->mtt[4]->type[0] = NO_CAPTURE;
+        tl->mtt[4]->type[1] = PAWN_PROMOTION_NO_CAPTURE;
+        tl->mtt[4]->tylen = 2;
+        tl->mtt[4]->side = BLACK_SIDE;
+        //Black Pawn push by two
+        tl->mtt[5] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
+        tl->mtt[5]->translations = (Translation*)malloc(sizeof(Translation) * 1);
+        tl->mtt[5]->translations[0] = (Translation){2, 0};
+        tl->mtt[5]->trlen = 1;
+        tl->mtt[5]->max_repeat = 1;
+        tl->mtt[5]->type = (move_type*)malloc(sizeof(move_type) * 1);
+        tl->mtt[5]->type[0] = PAWN_PUSH_BY_TWO;
+        tl->mtt[5]->tylen = 1;
+        tl->mtt[5]->side = BLACK_SIDE;
+    } else if (kind == KNIGHT) {
+        tl->mtt[0] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
+        tl->mtt[0]->translations = (Translation*)malloc(sizeof(Translation) * 8);
+        tl->mtt[0]->translations[0] = (Translation){-2, -1};
+        tl->mtt[0]->translations[1] = (Translation){-2, 1};
+        tl->mtt[0]->translations[2] = (Translation){-1, -2};
+        tl->mtt[0]->translations[3] = (Translation){-1, 2};
+        tl->mtt[0]->translations[4] = (Translation){1, -2};
+        tl->mtt[0]->translations[5] = (Translation){1, 2};
+        tl->mtt[0]->translations[6] = (Translation){2, -1};
+        tl->mtt[0]->translations[7] = (Translation){2, 1};
+        tl->mtt[0]->trlen = 8;
+        tl->mtt[0]->max_repeat = 1;
+        tl->mtt[0]->type = (move_type*)malloc(sizeof(move_type) * 2);
+        tl->mtt[0]->type[0] = CAPTURE;
+        tl->mtt[0]->type[1] = NO_CAPTURE;
+        tl->mtt[0]->tylen = 2;
+        tl->mtt[0]->side = WHITE_SIDE;
+    } else if (kind == BISHOP) {
+        tl->mtt[0] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
+        tl->mtt[0]->translations = (Translation*)malloc(sizeof(Translation) * 4);
+        tl->mtt[0]->translations[0] = (Translation){-1, -1};
+        tl->mtt[0]->translations[1] = (Translation){-1, 1};
+        tl->mtt[0]->translations[2] = (Translation){1, -1};
+        tl->mtt[0]->translations[3] = (Translation){1, 1};
+        tl->mtt[0]->trlen = 4;
+        tl->mtt[0]->max_repeat = 7;
+        tl->mtt[0]->type = (move_type*)malloc(sizeof(move_type) * 2);
+        tl->mtt[0]->type[0] = CAPTURE;
+        tl->mtt[0]->type[1] = NO_CAPTURE;
+        tl->mtt[0]->tylen = 2;
+        tl->mtt[0]->side = WHITE_SIDE;
+    } else if (kind == ROOK) {
+        tl->mtt[0] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
+        tl->mtt[0]->translations = (Translation*)malloc(sizeof(Translation) * 4);
+        tl->mtt[0]->translations[0] = (Translation){-1, 0};
+        tl->mtt[0]->translations[1] = (Translation){1, 0};
+        tl->mtt[0]->translations[2] = (Translation){0, -1};
+        tl->mtt[0]->translations[3] = (Translation){0, 1};
+        tl->mtt[0]->trlen = 4;
+        tl->mtt[0]->max_repeat = 7;
+        tl->mtt[0]->type = (move_type*)malloc(sizeof(move_type) * 2);
+        tl->mtt[0]->type[0] = CAPTURE;
+        tl->mtt[0]->type[1] = NO_CAPTURE;
+        tl->mtt[0]->tylen = 2;
+        tl->mtt[0]->side = WHITE_SIDE;
+    } else if (kind == QUEEN) {
+        tl->mtt[0] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
+        tl->mtt[0]->translations = (Translation*)malloc(sizeof(Translation) * 8);
+        tl->mtt[0]->translations[0] = (Translation){-1, -1};
+        tl->mtt[0]->translations[1] = (Translation){-1, 0};
+        tl->mtt[0]->translations[2] = (Translation){-1, 1};
+        tl->mtt[0]->translations[3] = (Translation){0, -1};
+        tl->mtt[0]->translations[4] = (Translation){0, 1};
+        tl->mtt[0]->translations[5] = (Translation){1, -1};
+        tl->mtt[0]->translations[6] = (Translation){1, 0};
+        tl->mtt[0]->translations[7] = (Translation){1, 1};
+        tl->mtt[0]->trlen = 8;
+        tl->mtt[0]->max_repeat = 7;
+        tl->mtt[0]->type = (move_type*)malloc(sizeof(move_type) * 2);
+        tl->mtt[0]->type[0] = CAPTURE;
+        tl->mtt[0]->type[1] = NO_CAPTURE;
+        tl->mtt[0]->tylen = 2;
+        tl->mtt[0]->side = WHITE_SIDE;
+    } else if (kind == KING) {
+        //King Standard Move
+        tl->mtt[0] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
+        tl->mtt[0]->translations = (Translation*)malloc(sizeof(Translation) * 8);
+        tl->mtt[0]->translations[0] = (Translation){-1, -1};
+        tl->mtt[0]->translations[1] = (Translation){-1, 0};
+        tl->mtt[0]->translations[2] = (Translation){-1, 1};
+        tl->mtt[0]->translations[3] = (Translation){0, -1};
+        tl->mtt[0]->translations[4] = (Translation){0, 1};
+        tl->mtt[0]->translations[5] = (Translation){1, -1};
+        tl->mtt[0]->translations[6] = (Translation){1, 0};
+        tl->mtt[0]->translations[7] = (Translation){1, 1};
+        tl->mtt[0]->trlen = 8;
+        tl->mtt[0]->max_repeat = 1;
+        tl->mtt[0]->type = (move_type*)malloc(sizeof(move_type) * 2);
+        tl->mtt[0]->type[0] = CAPTURE;
+        tl->mtt[0]->type[1] = NO_CAPTURE;
+        tl->mtt[0]->tylen = 2;
+        tl->mtt[0]->side = WHITE_SIDE;
+        //King QueenSide Castle
+        tl->mtt[1] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
+        tl->mtt[1]->translations = (Translation*)malloc(sizeof(Translation) * 1);
+        tl->mtt[1]->translations[0] = (Translation){0, -2};
+        tl->mtt[1]->trlen = 1;
+        tl->mtt[1]->max_repeat = 1;
+        tl->mtt[1]->type = (move_type*)malloc(sizeof(move_type) * 1);
+        tl->mtt[1]->type[0] = QUEENSIDE_CASTLE;
+        tl->mtt[1]->tylen = 1;
+        tl->mtt[1]->side = WHITE_SIDE;
+        //King KingSide Castle 
+        tl->mtt[2] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
+        tl->mtt[2]->translations = (Translation*)malloc(sizeof(Translation) * 1);
+        tl->mtt[2]->translations[0] = (Translation){0, 2};
+        tl->mtt[2]->trlen = 1;
+        tl->mtt[2]->max_repeat = 1;
+        tl->mtt[2]->type = (move_type*)malloc(sizeof(move_type) * 1);
+        tl->mtt[2]->type[0] = KINGSIDE_CASTLE;
+        tl->mtt[2]->tylen = 1;
+        tl->mtt[2]->side = WHITE_SIDE;
+    }
+    return tl;
+}
+
+move_type* translationlist_retrieve(Translationlist* tl, Displacement d, 
+                              Direction dir, side side, unsigned char* tylen) {
+    MoveTypeTranslation* mtt;
+    Translation* tr;
+    for (unsigned char i = 0; i < tl->len; i++) {
+        mtt = tl->mtt[i]; 
+        if (tl->kind == PAWN && mtt->side != side) {
+            continue;
+        }
+        tr = mtt->translations;
+        for (unsigned char j = 0; j < mtt->trlen; j++) {
+            Direction curr_dir = {tr[j].r, tr[j].c};
+            if (mtt->max_repeat == 1) {
+                //here comparing displacement to translation (has to be same)
+                if (d.r != tr[j].r || d.c != tr[j].c) {
+                    continue;
+                }
+                *tylen = mtt->tylen;
+                return mtt->type;
+            } else if (direction_cmp(dir, curr_dir)) {
+                //here comparing directions (rook, bishop, queen)
+                *tylen = mtt->tylen;
+                return mtt->type;
+            }
+        }
+    }
+    return NULL;
+}
+
+
+
+
+
+
 //Helper
 //Transformation copy_transformation(char* from, unsigned char len, 
 //                                        unsigned char max_repeat) {
@@ -61,18 +285,16 @@ void piece_free(Piece* piece) {
 //    char knight[16] = {-2, -1, -2, 1, -1, -2, -1, 2, 1, -2, 1, 2, 2, -1, 2, 1};
 //    char bishop[8] = {-1, -1, -1, 1, 1, -1, 1, 1};
 //    char queen[16] = {-1, -1, -1, 0, -1, 1, 0, -1, 0, 1, 1, -1, 1, 0, 1, 1};
-//    char rook_castle_wu[4] = {0, -2, 0, 3}; //whichever is in bounds
-//    char rook_castle_bu[4] = {0, 2, 0, -3}; //whichever is in bounds
+//    char queenside_castle[4] = {0, -2}; //whichever is in bounds
+//    char kingside_castle[4] = {0, 2}; //whichever is in bounds
 //    char rook[8] = {-1, 0, 0, -1, 0, 1, 1, 0};
-//    char king_castle_wu[4] = {0, -3, 0, 2};
-//    char king_castle_bu[4] = {0, -2, 0, 3};
 //    char king[16] = {-1, -1, -1, 0, -1, 1, 0, -1, 0, 1, 1, -1, 1, 0, 1, 1};
-//    char pawn_capture_wu[4] = {-1, -1, -1, 1};
-//    char pawn_wum[2] = {-1, 0}; 
-//    char pawn_wun[2] = {-2, 0}; 
-//    char pawn_capture_bu[4] = {1, -1, 1, 1};
-//    char pawn_bum[2] = {1, 0}; 
-//    char pawn_bun[2] = {2, 0}; 
+//    char pawn_capture_white[4] = {-1, -1, -1, 1};
+//    char pawn_no_capture_white[2] = {-1, 0}; 
+//    char pawn_push_by_two_white[2] = {-2, 0}; 
+//    char pawn_capture_black[4] = {1, -1, 1, 1};
+//    char pawn_no_capture_black[2] = {1, 0}; 
+//    char pawn_push_by_two_black[2] = {2, 0}; 
 //    switch (kind) {
 //        case KNIGHT:
 //            return copy_transformation(knight, 16, 1);

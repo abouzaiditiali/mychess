@@ -26,5 +26,6 @@ Movestack* movestack_new();
 void movestack_add(Movestack* s, Move move);
 Move movestack_pop(Movestack* s);
 void movestack_free(Movestack* s);
+Move last_move(Movestack* s);
 
 #endif /* MOVE_H */

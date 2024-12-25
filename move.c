@@ -61,3 +61,11 @@ void movestack_free(Movestack* s) {
     free(s);
 }
 
+Move last_move(Movestack* s) {
+    if (s->len < 2) {
+        fprintf(stderr, "There is no last move\n");
+        exit(1);
+    }
+    return s->tail->prev->move;
+}
+

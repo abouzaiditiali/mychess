@@ -30,15 +30,18 @@ void board_free(Board* board) {
 //Helper 
 void print_chars(player_perspective perspective) {
     printf("  ");
-    if (perspective == WHITES_PERSPECTIVE) {
-        for (char c = 'a'; c <= 'h'; c++) {
-            printf("   %c", c);
-        }
-    } else {
-        for (char c = 'h'; c >= 'a'; c--) {
-            printf("   %c", c);
-        }
-    }
+    for (unsigned char i = 0; i < 8; i++) { //added
+        printf("   %hhu", i); //added
+    } //added
+//    if (perspective == WHITES_PERSPECTIVE) {
+//        for (char c = 'a'; c <= 'h'; c++) {
+//            printf("   %c", c);
+//        }
+//    } else {
+//        for (char c = 'h'; c >= 'a'; c--) {
+//            printf("   %c", c);
+//        }
+//    }
     printf("\n");
 }
 
@@ -63,7 +66,8 @@ char convert_piece_to_char(Piece* piece) {
 void board_show(Board* board, player_perspective perspective) {
     printf("\n");
     print_chars(perspective);
-    unsigned char mu = 8, md = 1, curr = 1;
+    //unsigned char mu = 8, md = 1, curr = 1;
+    unsigned char mu = 0, md = 7, curr = 0; //added
     for (unsigned char i = 0; i < 17; i++) {
         if (i % 2 == 0) {
             printf("   ");
@@ -79,22 +83,25 @@ void board_show(Board* board, player_perspective perspective) {
             }
             printf(" |");
             for (unsigned char j = 0; j < 8; j++) {
-                Pos wp_pos = pos_make(i - curr, j);
-                Piece* piece;
-                if (perspective == WHITES_PERSPECTIVE) {
-                    piece = board_get(board, wp_pos);
-                } else {
-                    piece = board_get(board, pos_flip(wp_pos));
-                }
-                char c = convert_piece_to_char(piece);
-                printf(" %c |", c);
+                //Pos wp_pos = pos_make(i - curr, j);
+                //Piece* piece;
+                //if (perspective == WHITES_PERSPECTIVE) {
+                //    piece = board_get(board, wp_pos);
+                //} else {
+                //    piece = board_get(board, pos_flip(wp_pos));
+                //}
+                //char c = convert_piece_to_char(piece);
+                //printf(" %c |", c);
+                printf(" . |"); //added
             }
             curr++;
             printf(" ");
             if (perspective == WHITES_PERSPECTIVE) {
-                printf("%hhu", mu--);
+                //printf("%hhu", mu--);
+                printf("%hhu", mu++); //added
             } else {
-                printf("%hhu", md++);
+                //printf("%hhu", md++);
+                printf("%hhu", md--); //added
             }
         }
         printf("\n"); 
