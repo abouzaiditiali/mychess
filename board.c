@@ -207,34 +207,6 @@ void place_piece(Board* board, char* call) {
 //    }
 //}
 
-//Helper (returns true if it finds the piece looked for)
-//Piece* encounter(Board* board, piece_kind kind, side side, Pos pos, 
-//                                            Transformation transformation) {
-//    char* transformations = transformation.transformations;
-//    unsigned char max_repeat = transformation.max_repeat; 
-//    Pos curr_pos;
-//    for (unsigned char i = 0; i < transformation.len; i += 2) {
-//        char tr = transformations[i], tc = transformations[i + 1];
-//        curr_pos = pos;
-//        for (unsigned char j = 0; j < max_repeat; j++) {
-//            curr_pos.r += tr;
-//            curr_pos.c += tc;
-//            if (curr_pos.r < 0 || curr_pos.r >= board_size || curr_pos.c < 0 ||
-//                    curr_pos.c >= board_size) {
-//                break;
-//            }
-//            Piece* piece = board_get(board, curr_pos);
-//            if (piece == NULL) {
-//                continue;
-//            }
-//            if (piece->side != side || piece->kind != kind) {
-//                break;
-//            }
-//            return piece;
-//        }
-//    }
-//    return NULL;
-//}
 //
 ////Helper (only check pieces still on board, and not check the same piece twice)
 //Piece* handle_kind(Board* board, piece_kind kind, board_direction direction, 
@@ -298,22 +270,21 @@ void place_piece(Board* board, char* call) {
 //    return NULL;
 //}
 //
-////Helper
-//Pos kpos_get(Board* board, side kside) {
-//    Piece_entry* head;
-//    if (kside == WHITE_SIDE) {
-//        head = board->white_pieces->head;
-//    } else {
-//        head = board->black_pieces->head;
-//    }
-//    if (head) { //king expected to be first in the linked list
-//        if (head->piece->kind == KING) {
-//            return head->piece->position;
-//        }
-//    }
-//    fprintf(stderr, "King Not Found\n");
-//    exit(1);
-//}
+Pos kpos_get(Board* board, side kside) {
+    Piece_entry* head;
+    if (kside == WHITE_SIDE) {
+        head = board->white_pieces->head;
+    } else {
+        head = board->black_pieces->head;
+    }
+    if (head) { //king expected to be first in the linked list
+        if (head->piece->kind == KING) {
+            return head->piece->position;
+        }
+    }
+    fprintf(stderr, "King Not Found\n");
+    exit(1);
+}
 //
 ////Helper (get converse) 
 //side opp_side(side side) {
@@ -328,97 +299,6 @@ void place_piece(Board* board, char* call) {
 //    Pos kpos = kpos_get(board, threatened);
 //    piece_kind pk[5] = {ROOK, BISHOP, QUEEN, KNIGHT, PAWN};
 //    return square_targeted(board, kpos, opp_side(threatened), pk, 5);
-//}
-//
-////Helper (assumes the two pos are on same line, t is always of length 2)
-//void fill_transformation(char* transformation, Pos from, Pos to) {
-//    if (from.r == to.r) {
-//        if (to.c > from.c) {
-//            transformation[0] = 0; 
-//            transformation[1] = 1;
-//        } else {
-//            transformation[0] = 0;
-//            transformation[1] = -1;
-//        }
-//    } else if (from.c == to.c) { 
-//        if (to.r > from.r) {
-//            transformation[0] = 1;
-//            transformation[1] = 0;
-//        } else {
-//            transformation[0] = -1;
-//            transformation[1] = 0;
-//        }
-//    } else { //diagonal outcome
-//        if (to.r > from.r) {
-//            if (to.c < from.c) {
-//                transformation[0] = 1;
-//                transformation[1] = -1;
-//            } else {
-//                transformation[0] = 1;
-//                transformation[1] = 1;
-//            }
-//        } else {
-//            if (to.c < from.c) {
-//                transformation[0] = -1;
-//                transformation[1] = -1;
-//            } else {
-//                transformation[1] = -1;
-//                transformation[1] = 1;
-//            }
-//        }
-//    }
-//}
-//
-////Helper (t is always of length 2)
-//void reverse_transformation(char* transformation) {
-//    transformation[0] = -transformation[0];
-//    transformation[1] = -transformation[1];
-//}
-//
-////there is always only one piece that ever pins in each case
-//Piece* pin(Board* board, Piece* piece) {
-//    if (piece == NULL) {
-//        fprintf(stderr, "Empty cell cannot be pinned\n");
-//        exit(1);
-//    }
-//    if (piece->kind == KING) {
-//        fprintf(stderr, "King cannot be pinned\n");
-//        exit(1);
-//    }
-//    Pos kpos = kpos_get(board, piece->side);
-//    Pos ppos = piece->position;
-//    if (!(kpos.r == ppos.r) && !(kpos.c == ppos.c) && 
-//               !(abs(kpos.r - ppos.r) == abs(kpos.c - ppos.c))) {
-//        return NULL; //not in same line
-//    }
-//    Transformation t;
-//    t.len = 2;
-//    t.max_repeat = 7;
-//    t.transformations = (char*)malloc(sizeof(char) * 2); 
-//    malloc_check(t.transformations);
-//    fill_transformation(t.transformations, ppos, kpos);
-//    piece_kind pk[2]; //pieces maybe pinning
-//    if (abs(kpos.r - ppos.r) == abs(kpos.c - ppos.c)) {
-//        pk[0] = BISHOP;
-//        pk[1] = QUEEN;
-//    } else {
-//        pk[0] = ROOK;
-//        pk[1] = QUEEN;
-//    }
-//    if (!encounter(board, KING, piece->side, ppos, t)) {
-//        transformation_free(t);
-//        return NULL; //line between king and piece is not empty
-//    }
-//    reverse_transformation(t.transformations); //checking opp direction now
-//    for (unsigned char i = 0; i < 2; i++) {
-//        Piece* pinning = encounter(board, pk[i], opp_side(piece->side), ppos, t);
-//        if (pinning) {
-//            transformation_free(t);
-//            return pinning;
-//        }
-//    }
-//    transformation_free(t);
-//    return NULL; //line is not empty between piece and the maybe-pinning pcs
 //}
 //
 ////maybe use?

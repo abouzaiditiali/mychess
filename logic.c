@@ -10,6 +10,7 @@ Game* game_new() {
     for (unsigned char i = 0; i < 6; i++) {
         game->tls[i] = translationlist_new(pk[i]);
     }
+    game->check = (Check*)malloc(sizeof(Check));
     return game;
 }
 
@@ -30,6 +31,7 @@ void game_set(Game* game) {
         board_set(game->board, pos_make(7, positions[i]),
           piece_new(pk[i], WHITE_SIDE, NOT_MOVED, pos_make(7, positions[i])));
     }
+    game->check.check = false;
 }
 
 void game_free(Game* game) {
@@ -142,25 +144,126 @@ move_type find_move_type(Game* game, Piece* op, Piece* dp, move_type* mts,
     }
 }
 
-bool void_traj_check(Board* board, Piece* op, Direction dir, Pos tpos, 
-                                                        unsigned char tylen) {
-    piece_kind kind = op->kind;
-    Pos fpos = op->position;
-    if (kind == QUEEN || kind == BISHOP || kind == ROOK || tylen == 1) {
-        Pos curr_pos == pos_make(fpos.r + dir.r, fpos.c + dir.c);
-        Piece* curr_piece;
-        while (!pos_cmp(curr_pos, tpos)) {
-            curr_piece = board_get(board, curr_pos);
-            if (curr_piece) {
-                fprintf(stderr, "Piece cannot jump over pieces\n");
-                exit(1);
-                //maybe return false?
-            }
-            curr_pos.r += dir.r;
-            curr_pos.c += dir.c;
+bool void_traj_check(Board* board, Direction dir, Pos fpos, Pos tpos) {
+    Pos curr_pos == pos_make(fpos.r + dir.r, fpos.c + dir.c);
+    Piece* curr_piece;
+    while (!pos_cmp(curr_pos, tpos)) {
+        curr_piece = board_get(board, curr_pos);
+        if (curr_piece) {
+            return false;
         }
+        curr_pos.r += dir.r;
+        curr_pos.c += dir.c;
     }
     return true;
+}
+
+//Helper (returns true if it finds the piece looked for)
+Piece* encounter(Board* board, piece_kind kind, side side, Pos pos, 
+                                            Transformation transformation) {
+    char* transformations = transformation.transformations;
+    unsigned char max_repeat = transformation.max_repeat; 
+    Pos curr_pos;
+    for (unsigned char i = 0; i < transformation.len; i += 2) {
+        char tr = transformations[i], tc = transformations[i + 1];
+        curr_pos = pos;
+        for (unsigned char j = 0; j < max_repeat; j++) {
+            curr_pos.r += tr;
+            curr_pos.c += tc;
+            if (curr_pos.r < 0 || curr_pos.r >= board_size || curr_pos.c < 0 ||
+                    curr_pos.c >= board_size) {
+                break;
+            }
+            Piece* piece = board_get(board, curr_pos);
+            if (piece == NULL) {
+                continue;
+            }
+            if (piece->side != side || piece->kind != kind) {
+                break;
+            }
+            return piece;
+        }
+    }
+    return NULL;
+}
+
+//Helper (t is always of length 2)
+void reverse_transformation(char* transformation) {
+    transformation[0] = -transformation[0];
+    transformation[1] = -transformation[1];
+}
+
+//there is always only one piece that ever pins in each case
+Piece* pin(Game* game, Piece* piece) {
+    Pos kpos = kpos_get(board, piece->side);
+    Pos ppos = piece->position;
+    if (!(kpos.r == ppos.r) && !(kpos.c == ppos.c) && 
+               !(abs(kpos.r - ppos.r) == abs(kpos.c - ppos.c))) {
+        return NULL; //not in same line
+    }
+    Displacement k_to_p = pos_displacement(
+
+    
+    t.len = 2;
+    t.max_repeat = 7;
+    t.transformations = (char*)malloc(sizeof(char) * 2); 
+    malloc_check(t.transformations);
+    fill_transformation(t.transformations, ppos, kpos);
+    piece_kind pk[2]; //pieces maybe pinning
+    if (abs(kpos.r - ppos.r) == abs(kpos.c - ppos.c)) {
+        pk[0] = BISHOP;
+        pk[1] = QUEEN;
+    } else {
+        pk[0] = ROOK;
+        pk[1] = QUEEN;
+    }
+    if (!encounter(board, KING, piece->side, ppos, t)) {
+        transformation_free(t);
+        return NULL; //line between king and piece is not empty
+    }
+    reverse_transformation(t.transformations); //checking opp direction now
+    for (unsigned char i = 0; i < 2; i++) {
+        Piece* pinning = encounter(board, pk[i], opp_side(piece->side), ppos, t);
+        if (pinning) {
+            transformation_free(t);
+            return pinning;
+        }
+    }
+    transformation_free(t);
+    return NULL; //line is not empty between piece and the maybe-pinning pcs
+}
+
+bool legal_to_move(Game* game, Piece* op, Pos tpos, Pos captured_pos,
+                                                               move_type mt) {
+    switch (op->kind) {
+        case QUEEN:
+        case BISHOP:
+        case ROOK:
+        case KNIGHT:
+        case PAWN:
+            Piece* pinning = pin(game, op);
+            if (!pinning) {
+                return true;
+            }
+            Pos pinning_pos = pinning->position;
+            if (mt == CAPTURE || mt == PAWN_PROMOTION_CAPTURE) {
+                return pos_cmp(captured_pos, pinning_pos);
+            }
+            Pos kpos = kpos_get(game->board, op->side);
+            Displacement d1 = pos_displacement(pinning_pos, tpos); 
+            Displacement d2 = pos_displacement(pinning_pos, kpos); 
+            Direction dir1 = displacement_direction(d1);
+            Direction dir2 = displacement_direction(d2);
+            return direction_cmp(dir1, dir2);
+            //tpos in trajectory between king and pinning piece;
+        case KING:
+            if (game->check.check && (mt == QUEENSIDE_CASTLE ||
+                                      mt == KINGSIDE_CASTLE)) {
+                return false;
+            }
+            //handle dest square not safe (for all 3 possible moves)
+            //for KQcastle, handle square safety in between
+    }
 }
 
 bool move(Game* game, Square from, Square to) {
@@ -184,19 +287,20 @@ bool move(Game* game, Square from, Square to) {
     move_type mt = find_move_type(game, op, dp, mts, to, tylen, &captured_pos);
     //check plausible moves in context now (get down to one move type only)
 
-    if (!void_traj_check(game->board, op, dir, tpos, tylen)) {
-       return false; 
+    piece_kind kind = op->kind;
+    if (kind == QUEEN || kind == BISHOP || kind == ROOK || tylen == 1) {
+        if (!void_traj_check(game->board, dir, fpos, tpos)) {
+            return false; 
     }
     //check that there is nothing on the way from start to finish (exclusive)
 
-    //check piece is allowed to make that move mt
-    //for q b r n pawn, check if piece is pinned and if it is, check that
-    //tpos is between king and piece_pinning (if capture, pppos has to be ==
-    //captured pos) else (anything on the line between king and ppinning excl)
-    //ONE EXCEPTION: for en-passant, check tpos in line not captured pos);
-    //for king, king cannot be in check and castle
+    if (!legal_to_move(Game* game, Piece* op, Pos tpos, Pos captured_pos
+                                                    move_type mt)) {
+        return false;
+    }
+    //check if piece is allowed to move from its spot
+    //for king, additional checks for trajectory in castle and dest square
 
-    //special: if king, check that tpos is safe, if KQcastle, check in between
 
 
 

@@ -9,10 +9,17 @@ typedef enum { IN_PROGRESS, DRAW, BLACK_WIN, WHITE_WIN
 } game_outcome;
 
 typedef struct {
+    Pos kpos, checking;
+    bool check;
+    side threatened;
+} Check;
+
+typedef struct {
     Board* board;
     Movestack* moves;
     game_turn turn;
     Translationlist* tl; //always of length 6 (there are 6 kinds)
+    Check* check; //for efficiency
 } Game;
 
 Game* game_new();

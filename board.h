@@ -14,10 +14,10 @@ void board_set(Board* board, Pos pos, Piece* piece);
 void board_show(Board* board, player_perspective);
 void board_free(Board* board);
 
+Pos kpos_get(Board* board, side kside);
+
 Piece* check(Board* board, side threatened);
 Piece* pin(Board* board, Piece* piece);
-bool checkmate(Board* board, side threatened);
-bool stalemate(Board* board);
 void place_piece(Board* board, char* call);
 
 #endif /* BOARD_H */
