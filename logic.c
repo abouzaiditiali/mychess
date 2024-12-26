@@ -158,79 +158,103 @@ bool void_traj_check(Board* board, Direction dir, Pos fpos, Pos tpos) {
     return true;
 }
 
-//Helper (returns true if it finds the piece looked for)
-Piece* encounter(Board* board, piece_kind kind, side side, Pos pos, 
-                                            Transformation transformation) {
-    char* transformations = transformation.transformations;
-    unsigned char max_repeat = transformation.max_repeat; 
-    Pos curr_pos;
-    for (unsigned char i = 0; i < transformation.len; i += 2) {
-        char tr = transformations[i], tc = transformations[i + 1];
-        curr_pos = pos;
-        for (unsigned char j = 0; j < max_repeat; j++) {
-            curr_pos.r += tr;
-            curr_pos.c += tc;
-            if (curr_pos.r < 0 || curr_pos.r >= board_size || curr_pos.c < 0 ||
-                    curr_pos.c >= board_size) {
-                break;
-            }
-            Piece* piece = board_get(board, curr_pos);
-            if (piece == NULL) {
-                continue;
-            }
-            if (piece->side != side || piece->kind != kind) {
-                break;
-            }
-            return piece;
-        }
-    }
-    return NULL;
+bool out_of_bounds(char r, char c) {
+    return (r < 0 || r >= board_size || c < 0 || c >= board_size); 
 }
 
-//Helper (t is always of length 2)
-void reverse_transformation(char* transformation) {
-    transformation[0] = -transformation[0];
-    transformation[1] = -transformation[1];
+bool piece_traj_encounter(Board* board, Direction dir, Pos fpos, 
+                          piece_kind* pk, unsigned char pklen, side side, 
+                          unsigned char max_repeat) {
+    char curr_r = (char)fpos.r + dir.r, curr_c = (char)fpos.c + dir.c;
+    Piece* curr_piece;
+    for (unsigned char i = 0; i < max_repeat; i++) {
+        if (out_of_bounds(curr_r, curr_c)) {
+            return false;
+        } //handle error is betteR?
+        curr_piece = board_get(board, pos_make(curr_r, curr_c)); //handle error
+        if (!curr_piece) {
+            continue;
+        }
+        if (curr_piece->side != side) {
+            return false;
+        }
+        for (unsigned char i = 0; i < pklen; i++) {
+            if (curr_piece->kind == pk[i]) {
+                return true;
+            }
+        }
+        curr_r += dir.r;
+        curr_c += dir.c;
+    }
+    return false;
 }
 
 //there is always only one piece that ever pins in each case
-Piece* pin(Game* game, Piece* piece) {
+Piece* pin(Board* board, Piece* piece) {
     Pos kpos = kpos_get(board, piece->side);
-    Pos ppos = piece->position;
-    if (!(kpos.r == ppos.r) && !(kpos.c == ppos.c) && 
-               !(abs(kpos.r - ppos.r) == abs(kpos.c - ppos.c))) {
-        return NULL; //not in same line
+    Pos fpos = piece->position;
+    Displacement d = pos_displacement(kpos, fpos);
+    if ((abs(d.r) == 1 && abs(d.c) == 2) || (abs(d.r) == 2 && abs(d.c) == 1)) {
+        return NULL;
     }
-    Displacement k_to_p = pos_displacement(
-
-    
-    t.len = 2;
-    t.max_repeat = 7;
-    t.transformations = (char*)malloc(sizeof(char) * 2); 
-    malloc_check(t.transformations);
-    fill_transformation(t.transformations, ppos, kpos);
-    piece_kind pk[2]; //pieces maybe pinning
-    if (abs(kpos.r - ppos.r) == abs(kpos.c - ppos.c)) {
-        pk[0] = BISHOP;
-        pk[1] = QUEEN;
+    //handle error! all errors around the entire code
+    Direction dir = displacement_direction(d); //raises error if not same line
+    if (!void_traj_check(board, dir, kpos, fpos)) {
+        return NULL;
+    }
+    if (dir.r == 0 || dir.c == 0) {
+        piece_kind pk[2] = {ROOK, QUEEN};
     } else {
-        pk[0] = ROOK;
-        pk[1] = QUEEN;
+        piece_kind pk[2] = {BISHOP, QUEEN};
     }
-    if (!encounter(board, KING, piece->side, ppos, t)) {
-        transformation_free(t);
-        return NULL; //line between king and piece is not empty
+    return !piece_traj_encounter(board, dir, fpos, pk, 2, 
+                                                   opp_side(piece->side), 7);
+}
+
+//find a way to keep track of which kinds are left on board (count +-)
+bool square_threatened(Board* board, Pos pos, side threatening) {
+    Direction dr1[4] = {{0, -1}, {-1, 0}, {0, 1}, {1, 0}}; //along file/rank
+    piece_kind pk1[2] = {QUEEN, ROOK};
+    Direction dr2[4] = {{-1, -1}, {-1, 1}, {1, 1}, {1, -1}}; //diagonals
+    piece_kind pk2[2] = {QUEEN, BISHOP};
+    Direction dr3[8] = {{-2, -1}, {-2, 1}, {-1, -2}, {-1, 2}, 
+                            {1, -2}, {1, 2}, {2, -1}, {2, 1}}; //L
+    piece_kind pk3[1] = {KNIGHT};
+    Direction dr4[8] = {{0, -1}, {-1, 0}, {0, 1}, {1, 0}, 
+                            {1, -1}, {-1, 1}, {1, 1}, {1, -1}}; //cing
+    piece_kind pk4[1] = {KING};
+    if (threatening == WHITE_SIDE) {
+        Direction dr5[2] = {{1, -1}, {1, 1}};
+    } else {
+        Direction dr5[2] = {{-1, -1}, {-1, 1}};
     }
-    reverse_transformation(t.transformations); //checking opp direction now
-    for (unsigned char i = 0; i < 2; i++) {
-        Piece* pinning = encounter(board, pk[i], opp_side(piece->side), ppos, t);
-        if (pinning) {
-            transformation_free(t);
-            return pinning;
+    piece_kind pk5[1] = {PAWN};
+    for (unsigned char i = 0; i < 4; i++) {
+        if (piece_traj_encounter(board, dr1[i], pos, pk1, 2, threatening, 7)) {
+            return true;
         }
     }
-    transformation_free(t);
-    return NULL; //line is not empty between piece and the maybe-pinning pcs
+    for (unsigned char i = 0; i < 4; i++) {
+        if (piece_traj_encounter(board, dr2[i], pos, pk2, 2, threatening, 7)) {
+            return true;
+        }
+    }
+    for (unsigned char i = 0; i < 8; i++) {
+        if (piece_traj_encounter(board, dr3[i], pos, pk3, 1, threatening, 1)) {
+            return true;
+        }
+    }
+    for (unsigned char i = 0; i < 8; i++) {
+        if (piece_traj_encounter(board, dr4[i], pos, pk4, 1, threatening, 1)) {
+            return true;
+        }
+    }
+    for (unsigned char i = 0; i < 2; i++) {
+        if (piece_traj_encounter(board, dr5[i], pos, pk5, 1, threatening, 1)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool legal_to_move(Game* game, Piece* op, Pos tpos, Pos captured_pos,
@@ -241,7 +265,7 @@ bool legal_to_move(Game* game, Piece* op, Pos tpos, Pos captured_pos,
         case ROOK:
         case KNIGHT:
         case PAWN:
-            Piece* pinning = pin(game, op);
+            Piece* pinning = pin(game->board, op);
             if (!pinning) {
                 return true;
             }
@@ -257,19 +281,41 @@ bool legal_to_move(Game* game, Piece* op, Pos tpos, Pos captured_pos,
             return direction_cmp(dir1, dir2);
             //tpos in trajectory between king and pinning piece;
         case KING:
-            if (game->check.check && (mt == QUEENSIDE_CASTLE ||
-                                      mt == KINGSIDE_CASTLE)) {
+            side opp = opp_side(op->side);
+            if (square_threatened(game->board, tpos, opp)) {
                 return false;
             }
-            //handle dest square not safe (for all 3 possible moves)
-            //for KQcastle, handle square safety in between
+            Pos in_between;
+            if (mt == KINGSIDE_CASTLE) { 
+                in_between = pos_make(tpos.r, tpos.c + 1);
+            } else if (mt == QUEENSIDE_CASTLE) {
+                in_between = pos_make(tpos.r, tpos.c - 1);
+            return square_threatened(game->board, in_between, opp);
     }
-}
+} 
+
+bool pos_in_traj(Pos pos, Pos e1, Pos e2) {
+    Displacement d1 = pos_displacement(pos, e2);
+    Direction dir1 = displacement_direction(d1);
+    Displacement d2 = pos_displacement(e1, e2);
+    Direction dir2 = displacement_direction(d2);
+    if (d1.r == 0 && d2.r == 0 && direction_cmp(dir1, dir2)) { //same rank
+        return abs(d1.c) < abs(d2.c);
+    } else if (d1.c == 0 && d2.c == 0 && direction_cmp(dir1, dir2)) { //s file
+        return abs(d1.r) < abs(d2.r);
+    }
+
 
 bool move(Game* game, Square from, Square to) {
     Pos fpos = square_convert(from), tpos = square_convert(to);
     Piece* op = board_get(game->board, fpos);
     Piece* dp = board_get(game->board, tpos);
+    Check* check = game->check;
+   
+    if (check.threatened == op->side && check.status == DOUBLE_CHECK && 
+                                                            op->kind != KING) {
+        return false;
+    } //quick check (obvious) 
 
     valid_move_check(fpos, tpos, op, dp, game->turn);
     //checks valid move (primitive, only raises errors, basic)
@@ -287,6 +333,21 @@ bool move(Game* game, Square from, Square to) {
     move_type mt = find_move_type(game, op, dp, mts, to, tylen, &captured_pos);
     //check plausible moves in context now (get down to one move type only)
 
+    //handle check
+    if (check.threatened == op->side && check.status == CHECK) {
+        if (mt == KINGSIDE_CASTLE || mt == QUEENSIDE_CASTLE) {
+            return false;
+        } //early check here for efficiency(could check later in legal to move)
+        Pos kpos = kpos_get(game->board, op->side);
+        if ( (op->kind != KING) && 
+             ( (mtt == CAPTURE || mt == PAWN_PROMOTION_CAPTURE || 
+                         mt == EN_PASSANT) && !pos_cmp(captured_pos, tpos) ) &&
+             ( (mtt == NO_CAPTURE || mt == PAWN_PROMOTION_NO_CAPTURE ||
+                         mt == PAWN_PUSH_BY_TWO) && 
+                         !pos_in_traj(tpos, kpos, check.checking) ) )
+            return false;
+        }
+
     piece_kind kind = op->kind;
     if (kind == QUEEN || kind == BISHOP || kind == ROOK || tylen == 1) {
         if (!void_traj_check(game->board, dir, fpos, tpos)) {
@@ -298,8 +359,8 @@ bool move(Game* game, Square from, Square to) {
                                                     move_type mt)) {
         return false;
     }
-    //check if piece is allowed to move from its spot
-    //for king, additional checks for trajectory in castle and dest square
+    //check if piece is allowed to move from its spot (pin)
+    //for king, checks for trajectory safety in castle and dest square
 
 
 

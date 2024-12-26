@@ -7,10 +7,12 @@ typedef enum { BLACKS_TURN, WHITES_TURN
 } game_turn;
 typedef enum { IN_PROGRESS, DRAW, BLACK_WIN, WHITE_WIN
 } game_outcome;
+typedef enum { NO_CHECK, CHECK, DOUBLE_CHECK
+} check_status;
 
 typedef struct {
-    Pos kpos, checking;
-    bool check;
+    Pos checking;
+    check_status status;
     side threatened;
 } Check;
 

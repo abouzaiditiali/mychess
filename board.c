@@ -207,69 +207,6 @@ void place_piece(Board* board, char* call) {
 //    }
 //}
 
-//
-////Helper (only check pieces still on board, and not check the same piece twice)
-//Piece* handle_kind(Board* board, piece_kind kind, board_direction direction, 
-//                      side side, bool* maybe_found, Pos pos, piece_kind* pk) { 
-//    for (unsigned char i = 0; i < 6; i++) {
-//        if (kind == pk[i]) {
-//            if (maybe_found[i]) {
-//                break;
-//            }
-//            maybe_found[i] = true;
-//            Transformation t;
-//            if (kind == PAWN && direction == WHITE_MOVING_UP) {
-//                t = transformation_get(kind, BLACK_MOVING_UP, MOVED, CAPTURE);
-//                //move status doesn't matter
-//            } else {
-//                t = transformation_get(kind, WHITE_MOVING_UP, MOVED, CAPTURE);
-//            }
-//            Piece* piece = encounter(board, kind, side, pos, t);
-//            if (piece) {
-//                transformation_free(t);
-//                return piece;
-//            }
-//        }
-//    }
-//    return NULL;
-//}
-//
-////Helper 
-//bool kind_in_kinds(piece_kind kind, piece_kind* pk, unsigned char pklen) {
-//    for (unsigned char i = 0; i < pklen; i++) {
-//        if (pk[i] == kind) {
-//            return true;
-//        }
-//    }
-//    return false;
-//}
-//
-////Helper (returns first piece that targets, could be many)
-//Piece* square_targeted(Board* board, Pos pos, side targeting, piece_kind* pk,
-//                                                        unsigned char pklen) {
-//    bool maybe_found[6] = {false}; //6 max number of kinds
-//    board_direction direction = board->direction;
-//    Piece_entry* head;
-//    if (targeting == BLACK_SIDE) {
-//        head = board->black_pieces->head;
-//    } else {
-//        head = board->white_pieces->head;
-//    }
-//    while (head) {
-//        piece_kind kind = head->piece->kind;
-//        if (kind_in_kinds(kind, pk, pklen)) {
-//            side side = head->piece->side;
-//            Piece* piece = handle_kind(board, kind, direction, side, 
-//                                                        maybe_found, pos, pk); 
-//            if (piece) {
-//                return piece;
-//            }
-//        }
-//        head = head->next;
-//    }
-//    return NULL;
-//}
-//
 Pos kpos_get(Board* board, side kside) {
     Piece_entry* head;
     if (kside == WHITE_SIDE) {
