@@ -353,47 +353,6 @@ bool handled_check(Game* game, Piece* op, move_type mt, Pos cpos, Pos tpos,
     return false;
 }
 
-void update_moves(game, mt, fpos, tpos, captured_pos) {
-    if (is_capture_move(mt)) {
-        Piece* pcaptured = board_get(game->board, captured_pos);
-        piece_kind kcaptured = pcaptured->kind;
-    }
-    Move move = move_make(fpos, tpos, mt, kcaptured);
-    movestack_add(game->moves, move);
-}
-
-void update_board(game, op, tpos, mt) {
-    if (mt == PAWN_PROMOTION_CAPTURE || mt == PAWN_PROMOTION_NO_CAPTURE) {
-        char ch;
-        scanf("%c%*c", &ch);
-        if (ch < '1' || ch > '4') {
-            fprintf(stderr, "cannot promote to other than Q, B, N, R\n");
-            exit(1);
-        }
-        op->kind = ch - '0'; //can only be 1, 2, 3, 4
-    }
-    board_set(game->board, tpos, op); 
-    board_set(game->board, fpos, NULL);
-    if (mt == EN_PASSANT) {
-        board_set(game->board, captured_pos, NULL);
-    }
-    if (mt == KINGSIDE_CASTLE || mt == QUEENSIDE_CASTLE) {
-        Pos in_between = castle_through(mt, tpos);
-        Piece* nearest_rook = nearest_rook(board, mt, op->side);
-        Pos pos_rook = nearest_rook->position;
-        board_set(game->board, in_between, nearest_rook);
-        board_set(game->board, pos_rook, NULL);
-    }
-}
-    
-void update_turn(game) {
-    if (game->turn == WHITES_TURN) {
-        game->turn = BLACKS_TURN;
-    } else {
-        game->turn = WHITES_TURN;
-    }
-}
-
 bool move(Game* game, Square from, Square to) {
     Pos fpos = square_convert(from), tpos = square_convert(to);
     Piece* op = board_get(game->board, fpos);
@@ -444,18 +403,34 @@ bool move(Game* game, Square from, Square to) {
     //for king, checks for trajectory safety in castle and dest square
 
     //AT THIS POINT, move can be made and all changes to game state carried
-    update_moves(game, mt, fpos, tpos, captured_pos);
     update_board(game, op, tpos, mt);
-    update_turn(game);
+    if (mt == PAWN_PROMOTION_CAPTURE || mt == PAWN_PROMOTION_NO_CAPTURE) {
+        char ch;
+        scanf("%c%*c", &ch);
+        if (!is_valid_character(ch)) {
+            fprintf(stderr, "cannot promote to other than Q, B, N, R\n");
+            exit(1);
+        }
+        op->kind = digit(ch); //can only be 1, 2, 3, 4
+    }
+    board_set(game->board, tpos, op); 
+    board_set(game->board, fpos, NULL);
+    if (mt == EN_PASSANT) {
+        board_set(game->board, captured_pos, NULL);
+    }
+    if (mt == KINGSIDE_CASTLE || mt == QUEENSIDE_CASTLE) {
+        //write helpers to get nearest rook and in_between square (side)
+
+
+    update_moves
+    update_turn
+
+
+
 
     //From this point onwards, check consequences of the move:
     //is it a check, is it a checkmate, is it a stalemate, all that
-     
     update_check
-    //how to check if it is a check, first check that the piece moved is
-    //causing a threat, then take fpos and check if there could be a piece
-    //further from the king in that line (double check, or discovered check)
-
     if (checking) {
         update Check structure;
     } else 
