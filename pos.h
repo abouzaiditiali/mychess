@@ -19,9 +19,11 @@ Pos pos_make(unsigned char r, unsigned char c);
 Pos pos_flip(Pos pos);
 Square pos_convert(Pos pos, player_perspective perspective);
 bool pos_cmp(Pos pos1, Pos pos2);
+
 Displacement pos_displacement(Pos from, Pos to);
 Direction displacement_direction(Displacement d);
 bool direction_cmp(Direction d1, Direction d2);
+void tdd_show(char r, char c);
 
 Square square_make(char file, unsigned char rank);
 Pos square_convert(Square square);

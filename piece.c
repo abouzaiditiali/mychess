@@ -60,8 +60,8 @@ Translationlist* translationlist_new(piece_kind kind) {
         //White Pawn Capture
         tl->mtt[0] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
         tl->mtt[0]->translations = (Translation*)malloc(sizeof(Translation) * 2);
-        tl->mtt[0]->translations[0] = (Translation){-1, -1};
-        tl->mtt[0]->translations[1] = (Translation){-1, 1};
+        tl->mtt[0]->translations[0] = (Translation){{-1, -1}};
+        tl->mtt[0]->translations[1] = (Translation){{-1, 1}};
         tl->mtt[0]->trlen = 2;
         tl->mtt[0]->max_repeat = 1;
         tl->mtt[0]->type = (move_type*)malloc(sizeof(move_type) * 3);
@@ -73,7 +73,7 @@ Translationlist* translationlist_new(piece_kind kind) {
         //White Pawn No Capture
         tl->mtt[1] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
         tl->mtt[1]->translations = (Translation*)malloc(sizeof(Translation) * 1);
-        tl->mtt[1]->translations[0] = (Translation){-1, 0};
+        tl->mtt[1]->translations[0] = (Translation){{-1, 0}};
         tl->mtt[1]->trlen = 1;
         tl->mtt[1]->max_repeat = 1;
         tl->mtt[1]->type = (move_type*)malloc(sizeof(move_type) * 2);
@@ -84,7 +84,7 @@ Translationlist* translationlist_new(piece_kind kind) {
         //White Pawn Push by Two
         tl->mtt[2] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
         tl->mtt[2]->translations = (Translation*)malloc(sizeof(Translation) * 1);
-        tl->mtt[2]->translations[0] = (Translation){-2, 0};
+        tl->mtt[2]->translations[0] = (Translation){{-2, 0}};
         tl->mtt[2]->trlen = 1;
         tl->mtt[2]->max_repeat = 1;
         tl->mtt[2]->type = (move_type*)malloc(sizeof(move_type) * 1);
@@ -94,8 +94,8 @@ Translationlist* translationlist_new(piece_kind kind) {
         //Black Pawn Capture
         tl->mtt[3] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
         tl->mtt[3]->translations = (Translation*)malloc(sizeof(Translation) * 2);
-        tl->mtt[3]->translations[0] = (Translation){1, -1};
-        tl->mtt[3]->translations[1] = (Translation){1, 1};
+        tl->mtt[3]->translations[0] = (Translation){{1, -1}};
+        tl->mtt[3]->translations[1] = (Translation){{1, 1}};
         tl->mtt[3]->trlen = 2;
         tl->mtt[3]->max_repeat = 1;
         tl->mtt[3]->type = (move_type*)malloc(sizeof(move_type) * 3);
@@ -107,7 +107,7 @@ Translationlist* translationlist_new(piece_kind kind) {
         //Black Pawn No Capture
         tl->mtt[4] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
         tl->mtt[4]->translations = (Translation*)malloc(sizeof(Translation) * 1);
-        tl->mtt[4]->translations[0] = (Translation){1, 0};
+        tl->mtt[4]->translations[0] = (Translation){{1, 0}};
         tl->mtt[4]->trlen = 1;
         tl->mtt[4]->max_repeat = 1;
         tl->mtt[4]->type = (move_type*)malloc(sizeof(move_type) * 2);
@@ -118,7 +118,7 @@ Translationlist* translationlist_new(piece_kind kind) {
         //Black Pawn push by two
         tl->mtt[5] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
         tl->mtt[5]->translations = (Translation*)malloc(sizeof(Translation) * 1);
-        tl->mtt[5]->translations[0] = (Translation){2, 0};
+        tl->mtt[5]->translations[0] = (Translation){{2, 0}};
         tl->mtt[5]->trlen = 1;
         tl->mtt[5]->max_repeat = 1;
         tl->mtt[5]->type = (move_type*)malloc(sizeof(move_type) * 1);
@@ -128,14 +128,14 @@ Translationlist* translationlist_new(piece_kind kind) {
     } else if (kind == KNIGHT) {
         tl->mtt[0] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
         tl->mtt[0]->translations = (Translation*)malloc(sizeof(Translation) * 8);
-        tl->mtt[0]->translations[0] = (Translation){-2, -1};
-        tl->mtt[0]->translations[1] = (Translation){-2, 1};
-        tl->mtt[0]->translations[2] = (Translation){-1, -2};
-        tl->mtt[0]->translations[3] = (Translation){-1, 2};
-        tl->mtt[0]->translations[4] = (Translation){1, -2};
-        tl->mtt[0]->translations[5] = (Translation){1, 2};
-        tl->mtt[0]->translations[6] = (Translation){2, -1};
-        tl->mtt[0]->translations[7] = (Translation){2, 1};
+        tl->mtt[0]->translations[0] = (Translation){{-2, -1}};
+        tl->mtt[0]->translations[1] = (Translation){{-2, 1}};
+        tl->mtt[0]->translations[2] = (Translation){{-1, -2}};
+        tl->mtt[0]->translations[3] = (Translation){{-1, 2}};
+        tl->mtt[0]->translations[4] = (Translation){{1, -2}};
+        tl->mtt[0]->translations[5] = (Translation){{1, 2}};
+        tl->mtt[0]->translations[6] = (Translation){{2, -1}};
+        tl->mtt[0]->translations[7] = (Translation){{2, 1}};
         tl->mtt[0]->trlen = 8;
         tl->mtt[0]->max_repeat = 1;
         tl->mtt[0]->type = (move_type*)malloc(sizeof(move_type) * 2);
@@ -146,10 +146,10 @@ Translationlist* translationlist_new(piece_kind kind) {
     } else if (kind == BISHOP) {
         tl->mtt[0] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
         tl->mtt[0]->translations = (Translation*)malloc(sizeof(Translation) * 4);
-        tl->mtt[0]->translations[0] = (Translation){-1, -1};
-        tl->mtt[0]->translations[1] = (Translation){-1, 1};
-        tl->mtt[0]->translations[2] = (Translation){1, -1};
-        tl->mtt[0]->translations[3] = (Translation){1, 1};
+        tl->mtt[0]->translations[0] = (Translation){{-1, -1}};
+        tl->mtt[0]->translations[1] = (Translation){{-1, 1}};
+        tl->mtt[0]->translations[2] = (Translation){{1, -1}};
+        tl->mtt[0]->translations[3] = (Translation){{1, 1}};
         tl->mtt[0]->trlen = 4;
         tl->mtt[0]->max_repeat = 7;
         tl->mtt[0]->type = (move_type*)malloc(sizeof(move_type) * 2);
@@ -160,10 +160,10 @@ Translationlist* translationlist_new(piece_kind kind) {
     } else if (kind == ROOK) {
         tl->mtt[0] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
         tl->mtt[0]->translations = (Translation*)malloc(sizeof(Translation) * 4);
-        tl->mtt[0]->translations[0] = (Translation){-1, 0};
-        tl->mtt[0]->translations[1] = (Translation){1, 0};
-        tl->mtt[0]->translations[2] = (Translation){0, -1};
-        tl->mtt[0]->translations[3] = (Translation){0, 1};
+        tl->mtt[0]->translations[0] = (Translation){{-1, 0}};
+        tl->mtt[0]->translations[1] = (Translation){{1, 0}};
+        tl->mtt[0]->translations[2] = (Translation){{0, -1}};
+        tl->mtt[0]->translations[3] = (Translation){{0, 1}};
         tl->mtt[0]->trlen = 4;
         tl->mtt[0]->max_repeat = 7;
         tl->mtt[0]->type = (move_type*)malloc(sizeof(move_type) * 2);
@@ -174,14 +174,14 @@ Translationlist* translationlist_new(piece_kind kind) {
     } else if (kind == QUEEN) {
         tl->mtt[0] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
         tl->mtt[0]->translations = (Translation*)malloc(sizeof(Translation) * 8);
-        tl->mtt[0]->translations[0] = (Translation){-1, -1};
-        tl->mtt[0]->translations[1] = (Translation){-1, 0};
-        tl->mtt[0]->translations[2] = (Translation){-1, 1};
-        tl->mtt[0]->translations[3] = (Translation){0, -1};
-        tl->mtt[0]->translations[4] = (Translation){0, 1};
-        tl->mtt[0]->translations[5] = (Translation){1, -1};
-        tl->mtt[0]->translations[6] = (Translation){1, 0};
-        tl->mtt[0]->translations[7] = (Translation){1, 1};
+        tl->mtt[0]->translations[0] = (Translation){{-1, -1}};
+        tl->mtt[0]->translations[1] = (Translation){{-1, 0}};
+        tl->mtt[0]->translations[2] = (Translation){{-1, 1}};
+        tl->mtt[0]->translations[3] = (Translation){{0, -1}};
+        tl->mtt[0]->translations[4] = (Translation){{0, 1}};
+        tl->mtt[0]->translations[5] = (Translation){{1, -1}};
+        tl->mtt[0]->translations[6] = (Translation){{1, 0}};
+        tl->mtt[0]->translations[7] = (Translation){{1, 1}};
         tl->mtt[0]->trlen = 8;
         tl->mtt[0]->max_repeat = 7;
         tl->mtt[0]->type = (move_type*)malloc(sizeof(move_type) * 2);
@@ -193,14 +193,14 @@ Translationlist* translationlist_new(piece_kind kind) {
         //King Standard Move
         tl->mtt[0] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
         tl->mtt[0]->translations = (Translation*)malloc(sizeof(Translation) * 8);
-        tl->mtt[0]->translations[0] = (Translation){-1, -1};
-        tl->mtt[0]->translations[1] = (Translation){-1, 0};
-        tl->mtt[0]->translations[2] = (Translation){-1, 1};
-        tl->mtt[0]->translations[3] = (Translation){0, -1};
-        tl->mtt[0]->translations[4] = (Translation){0, 1};
-        tl->mtt[0]->translations[5] = (Translation){1, -1};
-        tl->mtt[0]->translations[6] = (Translation){1, 0};
-        tl->mtt[0]->translations[7] = (Translation){1, 1};
+        tl->mtt[0]->translations[0] = (Translation){{-1, -1}};
+        tl->mtt[0]->translations[1] = (Translation){{-1, 0}};
+        tl->mtt[0]->translations[2] = (Translation){{-1, 1}};
+        tl->mtt[0]->translations[3] = (Translation){{0, -1}};
+        tl->mtt[0]->translations[4] = (Translation){{0, 1}};
+        tl->mtt[0]->translations[5] = (Translation){{1, -1}};
+        tl->mtt[0]->translations[6] = (Translation){{1, 0}};
+        tl->mtt[0]->translations[7] = (Translation){{1, 1}};
         tl->mtt[0]->trlen = 8;
         tl->mtt[0]->max_repeat = 1;
         tl->mtt[0]->type = (move_type*)malloc(sizeof(move_type) * 2);
@@ -211,7 +211,7 @@ Translationlist* translationlist_new(piece_kind kind) {
         //King QueenSide Castle
         tl->mtt[1] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
         tl->mtt[1]->translations = (Translation*)malloc(sizeof(Translation) * 1);
-        tl->mtt[1]->translations[0] = (Translation){0, -2};
+        tl->mtt[1]->translations[0] = (Translation){{0, -2}};
         tl->mtt[1]->trlen = 1;
         tl->mtt[1]->max_repeat = 1;
         tl->mtt[1]->type = (move_type*)malloc(sizeof(move_type) * 1);
@@ -221,7 +221,7 @@ Translationlist* translationlist_new(piece_kind kind) {
         //King KingSide Castle 
         tl->mtt[2] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
         tl->mtt[2]->translations = (Translation*)malloc(sizeof(Translation) * 1);
-        tl->mtt[2]->translations[0] = (Translation){0, 2};
+        tl->mtt[2]->translations[0] = (Translation){{0, 2}};
         tl->mtt[2]->trlen = 1;
         tl->mtt[2]->max_repeat = 1;
         tl->mtt[2]->type = (move_type*)malloc(sizeof(move_type) * 1);
@@ -234,27 +234,31 @@ Translationlist* translationlist_new(piece_kind kind) {
 
 move_type* translationlist_retrieve(Translationlist* tl, Displacement d, 
                               Direction dir, side side, unsigned char* tylen) {
-    MoveTypeTranslation* mtt;
+    MoveTypeTranslation* mtts;
     Translation* tr;
     for (unsigned char i = 0; i < tl->len; i++) {
-        mtt = tl->mtt[i]; 
-        if (tl->kind == PAWN && mtt->side != side) {
+        mtts = tl->mtt[i]; 
+        if (tl->kind == PAWN && mtts->side != side) {
             continue;
         }
-        tr = mtt->translations;
-        for (unsigned char j = 0; j < mtt->trlen; j++) {
+        tr = mtts->translations;
+        for (unsigned char j = 0; j < mtts->trlen; j++) {
             Direction curr_dir = {tr[j].r, tr[j].c};
-            if (mtt->max_repeat == 1) {
+            if (mtts->max_repeat == 1) {
                 //here comparing displacement to translation (has to be same)
+                tdd_show(d.r, d.c);
+                tdd_show(tr[j].r, tr[j].c);
                 if (d.r != tr[j].r || d.c != tr[j].c) {
                     continue;
                 }
-                *tylen = mtt->tylen;
-                return mtt->type;
+                printf("ehehe\n");
+                *tylen = mtts->tylen;
+                return mtts->type;
             } else if (direction_cmp(dir, curr_dir)) {
                 //here comparing directions (rook, bishop, queen)
-                *tylen = mtt->tylen;
-                return mtt->type;
+                printf("hehehe\n");
+                *tylen = mtts->tylen;
+                return mtts->type;
             }
         }
     }
@@ -335,5 +339,12 @@ void piecelist_free(Piecelist* piecelist) {
         piece_entry_free(to_delete);
     }
     free(piecelist);
+}
+
+side opp_side(side side) {
+    if (side == WHITE_SIDE) {
+        return BLACK_SIDE;
+    }
+    return WHITE_SIDE;
 }
 

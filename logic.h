@@ -11,6 +11,11 @@ typedef enum { NO_CHECK, CHECK, DOUBLE_CHECK
 } check_status;
 
 typedef struct {
+    Direction* directions;
+    unsigned char len, max_repeat;
+} CaptureDirections;
+
+typedef struct {
     Pos checking;
     check_status status;
     side threatened;
@@ -20,7 +25,7 @@ typedef struct {
     Board* board;
     Movestack* moves;
     game_turn turn;
-    Translationlist* tl; //always of length 6 (there are 6 kinds)
+    Translationlist** tls; //always of length 6 (there are 6 kinds)
     Check* check; //for efficiency
 } Game;
 

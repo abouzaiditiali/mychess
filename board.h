@@ -15,9 +15,7 @@ void board_show(Board* board, player_perspective);
 void board_free(Board* board);
 
 Pos kpos_get(Board* board, side kside);
-
-Piece* check(Board* board, side threatened);
-Piece* pin(Board* board, Piece* piece);
+Piece* pin(Board* board, Pos pinned_pos, side pinning_side);
 void place_piece(Board* board, char* call);
 
 #endif /* BOARD_H */

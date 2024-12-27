@@ -31,26 +31,35 @@ Displacement pos_displacement(Pos from, Pos to) {
 
 Direction displacement_direction(Displacement d) {
     if ((abs(d.r) == 1 && abs(d.c) == 2) || (abs(d.r) == 2 && abs(d.c) == 1)) {
-        return {d.r, d.c}; //L
+        Direction dir = {d.r, d.c}; //L
+        return dir;
     } else if (d.r == 0 || d.c == 0) {
         if (d.c > 0) {
-            return {0, 1}; //Rank to the right
+            Direction dir = {0, 1}; //Rank to the right
+            return dir;
         } else if (d.c < 0){
-            return {0, -1}; //Rank to the left 
+            Direction dir = {0, -1}; //Rank to the left 
+            return dir;
         } else if (d.r > 0){
-            return {1, 0}; //File down
+            Direction dir = {1, 0}; //File down
+            return dir;
         } else if (d.r < 0){
-            return {-1, 0}; //File up
+            Direction dir = {-1, 0}; //File up
+            return dir;
         }
     } else if (abs(d.r) == abs(d.c)) {
         if (d.r < 0 && d.c < 0) {
-            return {-1, -1}; //Diagonal top left
+            Direction dir = {-1, -1}; //Diagonal top left
+            return dir;
         } else if (d.r < 0 && d.c > 0) {
-            return {-1, 1}; //Diagonal top right 
+            Direction dir = {-1, 1}; //Diagonal top right 
+            return dir;
         } else if (d.r > 0 && d.c < 0) {
-            return {1, -1}; //Diagonal bottom left
+            Direction dir = {1, -1}; //Diagonal bottom left
+            return dir;
         } else if (d.r > 0 && d.c > 0) {
-            return {1, 1}; //Diagonal bottom right
+            Direction dir = {1, 1}; //Diagonal bottom right
+            return dir;
         }
     }
     fprintf(stderr, "Unable to retrieve direction from displacement\n");
@@ -59,6 +68,10 @@ Direction displacement_direction(Displacement d) {
 
 bool direction_cmp(Direction d1, Direction d2) {
     return d1.r == d2.r && d1.c == d2.c;
+}
+
+void tdd_show(char r, char c) {
+    printf("(%d, %d)\n", r, c);
 }
 
 Square square_make(char file, unsigned char rank) {

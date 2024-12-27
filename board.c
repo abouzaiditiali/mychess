@@ -30,18 +30,15 @@ void board_free(Board* board) {
 //Helper 
 void print_chars(player_perspective perspective) {
     printf("  ");
-    for (unsigned char i = 0; i < 8; i++) { //added
-        printf("   %hhu", i); //added
-    } //added
-//    if (perspective == WHITES_PERSPECTIVE) {
-//        for (char c = 'a'; c <= 'h'; c++) {
-//            printf("   %c", c);
-//        }
-//    } else {
-//        for (char c = 'h'; c >= 'a'; c--) {
-//            printf("   %c", c);
-//        }
-//    }
+    if (perspective == WHITES_PERSPECTIVE) {
+        for (char c = 'a'; c <= 'h'; c++) {
+            printf("   %c", c);
+        }
+    } else {
+        for (char c = 'h'; c >= 'a'; c--) {
+            printf("   %c", c);
+        }
+    }
     printf("\n");
 }
 
@@ -66,8 +63,7 @@ char convert_piece_to_char(Piece* piece) {
 void board_show(Board* board, player_perspective perspective) {
     printf("\n");
     print_chars(perspective);
-    //unsigned char mu = 8, md = 1, curr = 1;
-    unsigned char mu = 0, md = 7, curr = 0; //added
+    unsigned char mu = 8, md = 1, curr = 1;
     for (unsigned char i = 0; i < 17; i++) {
         if (i % 2 == 0) {
             printf("   ");
@@ -83,25 +79,22 @@ void board_show(Board* board, player_perspective perspective) {
             }
             printf(" |");
             for (unsigned char j = 0; j < 8; j++) {
-                //Pos wp_pos = pos_make(i - curr, j);
-                //Piece* piece;
-                //if (perspective == WHITES_PERSPECTIVE) {
-                //    piece = board_get(board, wp_pos);
-                //} else {
-                //    piece = board_get(board, pos_flip(wp_pos));
-                //}
-                //char c = convert_piece_to_char(piece);
-                //printf(" %c |", c);
-                printf(" . |"); //added
+                Pos wp_pos = pos_make(i - curr, j);
+                Piece* piece;
+                if (perspective == WHITES_PERSPECTIVE) {
+                    piece = board_get(board, wp_pos);
+                } else {
+                    piece = board_get(board, pos_flip(wp_pos));
+                }
+                char c = convert_piece_to_char(piece);
+                printf(" %c |", c);
             }
             curr++;
             printf(" ");
             if (perspective == WHITES_PERSPECTIVE) {
-                //printf("%hhu", mu--);
-                printf("%hhu", mu++); //added
+                printf("%hhu", mu--);
             } else {
-                //printf("%hhu", md++);
-                printf("%hhu", md--); //added
+                printf("%hhu", md++);
             }
         }
         printf("\n"); 
@@ -139,21 +132,6 @@ void board_set(Board* board, Pos pos, Piece* piece) {
     }
     board->matrix[pos.r][pos.c] = piece;
 }
-
-//void board_swap(Board* board, Pos pos1, Pos pos2) {
-//    bounds_check(pos1.r, pos1.c);
-//    bounds_check(pos2.r, pos2.c);
-//    Piece* piece1 = board_get(board, pos1);
-//    Piece* piece2 = board_get(board, pos2);
-//    board->matrix[pos1.r][pos1.c] = piece2;
-//    board->matrix[pos2.r][pos2.c] = piece1;
-//    if (piece2) {
-//        piece2->position = pos1; //in case
-//    }
-//    if (piece1) {
-//        piece1->position = pos2; //in case
-//    }
-//}
 
 //Helper
 bool is_upper_case(char c) {
@@ -222,121 +200,4 @@ Pos kpos_get(Board* board, side kside) {
     fprintf(stderr, "King Not Found\n");
     exit(1);
 }
-//
-////Helper (get converse) 
-//side opp_side(side side) {
-//    if (side == WHITE_SIDE) {
-//        return BLACK_SIDE;
-//    } else {
-//        return WHITE_SIDE;
-//    }
-//}
-//
-//Piece* check(Board* board, side threatened) {
-//    Pos kpos = kpos_get(board, threatened);
-//    piece_kind pk[5] = {ROOK, BISHOP, QUEEN, KNIGHT, PAWN};
-//    return square_targeted(board, kpos, opp_side(threatened), pk, 5);
-//}
-//
-////maybe use?
-//void fill_transformation(char* transformation, Pos from, Pos to);
-//void reverse_transformation(char* transformation);
-//Piece* square_targeted(Board* board, Pos pos, side targeting, piece_kind* pk,
-//                            unsigned char pklen);
-//
-////Helper
-////pos and transformation are both the king's
-//bool safe_escape(Board* board, Piece* checking, Pos pos, 
-//                                              Transformation transformation) {
-//    char* transformations = transformation.transformations;
-//    unsigned char max_repeat = transformation.max_repeat; 
-//    Pos curr_pos;
-//    for (unsigned char i = 0; i < transformation.len; i += 2) {
-//        char tr = transformations[i], tc = transformations[i + 1];
-//        curr_pos = pos;
-//        for (unsigned char j = 0; j < max_repeat; j++) {
-//            curr_pos.r += tr;
-//            curr_pos.c += tc;
-//            if (curr_pos.r < 0 || curr_pos.r >= board_size || curr_pos.c < 0 ||
-//                    curr_pos.c >= board_size) {
-//                break;
-//            }
-//            Piece* piece = board_get(board, curr_pos);
-//            if (!piece && piece->side == opp_side(checking->side)) {
-//                break;
-//            }
-//            piece_kind pk[6] = {PAWN, BISHOP, KNIGHT, ROOK, QUEEN, KING};
-//            if (square_targeted(board, curr_pos, checking->side, pk, 6)) {
-//                //square_protected
-//                break;
-//            }
-//            if (checking->kind == QUEEN || checking->kind == BISHOP ||
-//                                                    checking->kind == ROOK) {
-//                char* t = (char*)malloc(sizeof(char) * 2);
-//                fill_transformation(t, pos, checking->position);
-//                reverse_transformation(t);
-//                Pos reversed_pos = pos_make(pos.r + t[0], pos.c + t[1]);
-//                free(t);
-//                return (!pos_cmp(reversed_pos, piece->position));
-//            }
-//            return true;
-//        }
-//    }
-//    return false;
-//}
-//
-////wait what about double check, fuck
-////if double check, only check for the escape
-////also very important, for efficiency, only check if it is a double check if
-////the piece checking has some piece along the same line
-////what if i were to check for bishop, queen, rook, and if they are not the piece checking
-////it cannot be a double check, if they are, check for any pieces that were in
-////the trajectory between the piece checking and the king in the previous move!
-//bool checkmate(Board* board, side threatened) {
-//    Piece* checking = check(board, threatened);
-//    if (checking == NULL) {
-//        return false;
-//    }
-//    Pos kpos = kpos_get(board, threatened);
-//    Transformation t = transformation_get(KING, board->direction,
-//                                          MOVED, CAPTURE); //only kind matters
-//    if (!safe_escape(board, checking, kpos, t)) {
-//        return false;
-//    }
-//    //second case only applies to queen, bishop, and rook
-//    //see trajectory between king and piece checking
-//    //check every square and find the one where a piece can move. 
-//    //it is important to check all pieces as square_targeted returns the first
-//    //piece and that one might be pinned but there could be another piece
-//    //also targeting that has been unaccounted for
-//
-//    //check if piece checking can be captured 
-//    return true;
-//}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

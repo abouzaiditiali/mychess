@@ -11,6 +11,7 @@ Game* game_new() {
         game->tls[i] = translationlist_new(pk[i]);
     }
     game->check = (Check*)malloc(sizeof(Check));
+    return game;
 }
 
 //Assumes WHITE'S PERSPECTIVE
@@ -30,7 +31,7 @@ void game_set(Game* game) {
         board_set(game->board, pos_make(7, positions[i]),
           piece_new(pk[i], WHITE_SIDE, NOT_MOVED, pos_make(7, positions[i])));
     }
-    game->check.status = NO_CHECK;
+    game->check->status = NO_CHECK;
 }
 
 void game_free(Game* game) {
@@ -95,7 +96,7 @@ move_type find_move_type(Game* game, Piece* op, Piece* dp, move_type* mts,
             exit(1);
         }
         if (op->kind == KING) {
-           Piece* nearrook = nearest_rook(board, mts[0], op->side);
+           Piece* nearrook = nearest_rook(game->board, mts[0], op->side);
            if (nearrook == NULL || nearrook->kind != ROOK || 
                                                    nearrook->moved == MOVED) {
                 fprintf(stderr, "KQcastle not poss, no piece/rook or moved\n");
@@ -130,7 +131,8 @@ move_type find_move_type(Game* game, Piece* op, Piece* dp, move_type* mts,
                 }
                 return CAPTURE;
             }
-            Move last = last_moves(game->moves);
+            printf("%hhu\n", tylen);
+            Move last = last_move(game->moves);
             Pos pbehind;
             if (op->side == WHITE_SIDE) {
                 pbehind = pos_make(dp->position.r + 1, dp->position.c); 
@@ -138,8 +140,8 @@ move_type find_move_type(Game* game, Piece* op, Piece* dp, move_type* mts,
                 pbehind = pos_make(dp->position.r - 1, dp->position.c); 
             }
             Square sbehind = pos_convert(pbehind, WHITES_PERSPECTIVE);
-            if (last->type == PAWN_PUSH_BY_TWO && 
-                                            square_cmp(last->to, sbehind)) {
+            if (last.type == PAWN_PUSH_BY_TWO && 
+                                            square_cmp(last.to, sbehind)) {
                 *captured_pos = pbehind;
                 return EN_PASSANT;
             }
@@ -149,7 +151,7 @@ move_type find_move_type(Game* game, Piece* op, Piece* dp, move_type* mts,
 }
 
 bool void_traj_check(Board* board, Direction dir, Pos fpos, Pos tpos) {
-    Pos curr_pos == pos_make(fpos.r + dir.r, fpos.c + dir.c);
+    Pos curr_pos = pos_make(fpos.r + dir.r, fpos.c + dir.c);
     Piece* curr_piece;
     while (!pos_cmp(curr_pos, tpos)) {
         curr_piece = board_get(board, curr_pos);
@@ -166,37 +168,37 @@ bool out_of_bounds(char r, char c) {
     return (r < 0 || r >= board_size || c < 0 || c >= board_size); 
 }
 
-bool piece_traj_encounter(Board* board, Direction dir, Pos fpos, 
+Piece* piece_traj_encounter(Board* board, Direction dir, Pos fpos, 
                           piece_kind* pk, unsigned char pklen, side side, 
                           unsigned char max_repeat) {
     char curr_r = (char)fpos.r + dir.r, curr_c = (char)fpos.c + dir.c;
     Piece* curr_piece;
     for (unsigned char i = 0; i < max_repeat; i++) {
         if (out_of_bounds(curr_r, curr_c)) {
-            return false;
+            return NULL;
         } //handle error is betteR?
         curr_piece = board_get(board, pos_make(curr_r, curr_c)); //handle error
         if (!curr_piece) {
             continue;
         }
         if (curr_piece->side != side) {
-            return false;
+            return NULL;
         }
         for (unsigned char i = 0; i < pklen; i++) {
             if (curr_piece->kind == pk[i]) {
-                return true;
+                return curr_piece;
             }
         }
         curr_r += dir.r;
         curr_c += dir.c;
     }
-    return false;
+    return NULL;
 }
 
 //there is always only one piece that ever pins in each case
-Piece* pin(Board* board, Piece* piece) {
-    Pos kpos = kpos_get(board, piece->side);
-    Pos fpos = piece->position;
+Piece* pin(Board* board, Pos pinned_pos, side pinning_side) {
+    Pos kpos = kpos_get(board, opp_side(pinning_side));
+    Pos fpos = pinned_pos;
     Displacement d = pos_displacement(kpos, fpos);
     if ((abs(d.r) == 1 && abs(d.c) == 2) || (abs(d.r) == 2 && abs(d.c) == 1)) {
         return NULL;
@@ -206,13 +208,15 @@ Piece* pin(Board* board, Piece* piece) {
     if (!void_traj_check(board, dir, kpos, fpos)) {
         return NULL;
     }
+    piece_kind pk[2];
     if (dir.r == 0 || dir.c == 0) {
-        piece_kind pk[2] = {ROOK, QUEEN};
+        pk[0] = ROOK;
+        pk[1] = QUEEN;
     } else {
-        piece_kind pk[2] = {BISHOP, QUEEN};
+        pk[0] = BISHOP;
+        pk[1] = QUEEN;
     }
-    return !piece_traj_encounter(board, dir, fpos, pk, 2, 
-                                                   opp_side(piece->side), 7);
+    return piece_traj_encounter(board, dir, fpos, pk, 2, pinning_side, 7);
 }
 
 //find a way to keep track of which kinds are left on board (count +-)
@@ -227,10 +231,13 @@ bool square_threatened(Board* board, Pos pos, side threatening) {
     Direction dr4[8] = {{0, -1}, {-1, 0}, {0, 1}, {1, 0}, 
                             {1, -1}, {-1, 1}, {1, 1}, {1, -1}}; //cing
     piece_kind pk4[1] = {KING};
+    Direction dr5[2];
     if (threatening == WHITE_SIDE) {
-        Direction dr5[2] = {{1, -1}, {1, 1}};
+        dr5[0] = (Direction){1, -1};
+        dr5[1] = (Direction){1, 1};
     } else {
-        Direction dr5[2] = {{-1, -1}, {-1, 1}};
+        dr5[0] = (Direction){-1, -1};
+        dr5[1] = (Direction){-1, 1};
     }
     piece_kind pk5[1] = {PAWN};
     for (unsigned char i = 0; i < 4; i++) {
@@ -276,8 +283,8 @@ bool legal_to_move(Game* game, Piece* op, Pos tpos, Pos captured_pos,
         case BISHOP:
         case ROOK:
         case KNIGHT:
-        case PAWN:
-            Piece* pinning = pin(game->board, op);
+        case PAWN: {
+            Piece* pinning = pin(game->board, op->position, opp_side(op->side));
             if (!pinning) {
                 return true;
             }
@@ -292,13 +299,15 @@ bool legal_to_move(Game* game, Piece* op, Pos tpos, Pos captured_pos,
             Direction dir2 = displacement_direction(d2);
             return direction_cmp(dir1, dir2);
             //tpos in trajectory between king and pinning piece;
-        case KING:
+        }
+        case KING: {
             side opp = opp_side(op->side);
             if (square_threatened(game->board, tpos, opp)) {
                 return false;
             }
-            Pos in_between;
-           return square_threatened(game->board, in_between, opp);
+            Pos in_between = castle_through(mt, tpos);
+            return square_threatened(game->board, in_between, opp);
+        }
     }
 } 
 
@@ -337,7 +346,7 @@ bool handled_check(Game* game, Piece* op, move_type mt, Pos cpos, Pos tpos,
         return false;
     }
     Pos kpos = kpos_get(game->board, op->side);
-    Piece* pchecking = board_get(game->board, check.checking);
+    Piece* pchecking = board_get(game->board, game->check->checking);
     if (op->kind == KING) {
         return true;
     }
@@ -345,7 +354,7 @@ bool handled_check(Game* game, Piece* op, move_type mt, Pos cpos, Pos tpos,
         return true;
     }
     if ((pchecking->kind == QUEEN || 
-        pcheking->kind == BISHOP || 
+        pchecking->kind == BISHOP || 
         pchecking->kind == ROOK) && is_non_capture_move(mt) && 
                                     pos_in_traj(tpos, kpos, cpos)) {
         return true;
@@ -353,16 +362,21 @@ bool handled_check(Game* game, Piece* op, move_type mt, Pos cpos, Pos tpos,
     return false;
 }
 
-void update_moves(game, mt, fpos, tpos, captured_pos) {
+void update_moves(Game* game, move_type mt, Square from, Square to, 
+                                                        Pos captured_pos) {
+    piece_kind kind_captured;
     if (is_capture_move(mt)) {
         Piece* pcaptured = board_get(game->board, captured_pos);
-        piece_kind kcaptured = pcaptured->kind;
+        kind_captured = pcaptured->kind;
+    } else {
+        kind_captured = PAWN; //trivial
     }
-    Move move = move_make(fpos, tpos, mt, kcaptured);
+    Move move = move_make(from, to, mt, kind_captured);
     movestack_add(game->moves, move);
 }
 
-void update_board(game, op, tpos, mt) {
+void update_board(Game* game, Piece* op, Pos fpos, Pos tpos, move_type mt,
+                                Pos captured_pos) {
     if (mt == PAWN_PROMOTION_CAPTURE || mt == PAWN_PROMOTION_NO_CAPTURE) {
         char ch;
         scanf("%c%*c", &ch);
@@ -379,14 +393,14 @@ void update_board(game, op, tpos, mt) {
     }
     if (mt == KINGSIDE_CASTLE || mt == QUEENSIDE_CASTLE) {
         Pos in_between = castle_through(mt, tpos);
-        Piece* nearest_rook = nearest_rook(board, mt, op->side);
-        Pos pos_rook = nearest_rook->position;
-        board_set(game->board, in_between, nearest_rook);
+        Piece* nrook= nearest_rook(game->board, mt, op->side);
+        Pos pos_rook = nrook->position;
+        board_set(game->board, in_between, nrook);
         board_set(game->board, pos_rook, NULL);
     }
 }
     
-void update_turn(game) {
+void update_turn(Game* game) {
     if (game->turn == WHITES_TURN) {
         game->turn = BLACKS_TURN;
     } else {
@@ -394,13 +408,108 @@ void update_turn(game) {
     }
 }
 
+CaptureDirections fill_directions(char* from, unsigned char len, 
+                                                    unsigned char max_repeat) {
+    CaptureDirections cds;
+    cds.max_repeat = max_repeat;
+    cds.len = len / 2;
+    cds.directions = (Direction*)malloc(sizeof(Direction) * cds.len);
+    unsigned char j = 0;
+    for (unsigned char i = 0; i < len; i += 2) {
+        cds.directions[j++] = (Direction){from[i], from[i + 1]};
+    }
+    return cds;
+}
+
+CaptureDirections capture_direction_get(piece_kind kind, side side) {
+    switch (kind) {
+        case ROOK: {
+            char d1[8] = {0, -1, -1, 0, 0, 1, 1, 0};
+            return fill_directions(d1, 8, 7);
+                   }
+        case QUEEN: {
+            char d2[16] = {0, -1, -1, 0, 0, 1, 1, 0, 
+                            -1, -1, -1, 1, 1, 1, 1, -1};
+            return fill_directions(d2, 16, 7);
+                    }
+        case BISHOP: {
+            char d3[8] = {-1, -1, -1, 1, 1, 1, 1, -1};
+            return fill_directions(d3, 8, 7);
+                     }
+        case KNIGHT: {
+            char d4[16] = {-2, -1, -2, 1, -1, -2, -1, 2, 
+                            1, -2, 1, 2, 2, -1, 2, 1};
+            return fill_directions(d4, 16, 1);
+                     }
+        case KING: {
+            char d5[16] = {0, -1, -1, 0, 0, 1, 1, 0, 
+                            1, -1, -1, 1, 1, 1, 1, -1};
+            return fill_directions(d5, 16, 1);
+                   }
+        case PAWN: {
+            if (side == WHITE_SIDE) {
+                char d6[4] = {-1, -1, -1, 1};
+                return fill_directions(d6, 4, 1);
+            } else {
+                char d7[4] = {1, -1, 1, 1};
+                return fill_directions(d7, 4, 1);
+            }
+                   }
+    }
+}
+
+void update_check(Game* game, Pos fpos, Pos tpos, move_type mt, 
+                                                    Pos captured_pos) {
+    Piece* maybe_checking = board_get(game->board, tpos);
+    if (mt == KINGSIDE_CASTLE || mt == QUEENSIDE_CASTLE) {
+        Pos in_between = castle_through(mt, tpos);
+        maybe_checking = board_get(game->board, in_between); //rook at new pos
+    }
+    game->check->status = NO_CHECK;
+    piece_kind kind1 = maybe_checking->kind;
+    side side = maybe_checking->side;
+    if (kind1 != KING) {
+        CaptureDirections cds = capture_direction_get(kind1, side);
+        bool check;
+        piece_kind pk[1] = {KING};
+        for (unsigned char i = 0; i < cds.len; i++) {
+            check = piece_traj_encounter(game->board, cds.directions[i], 
+                                        maybe_checking->position, pk, 1,
+                                        opp_side(side), cds.max_repeat);
+            if (check) {
+                game->check->checking = maybe_checking->position;
+                game->check->status = CHECK;
+                game->check->threatened = opp_side(side);
+                break;
+            }
+        }
+    }
+    if (mt != KINGSIDE_CASTLE && mt != QUEENSIDE_CASTLE) {
+        //can also get the second piece checking if i want, think about it
+        if (pin(game->board, fpos, side)) {
+            if (game->check->status == CHECK) {
+                game->check->status = DOUBLE_CHECK;
+            } else {
+                game->check->status = CHECK;
+            }
+        }
+    }
+    if (mt == EN_PASSANT && game->check->status == NO_CHECK) {
+        if (pin(game->board, captured_pos, side)) {
+            game->check->status = CHECK;
+        }
+    }
+}
+
 bool move(Game* game, Square from, Square to) {
+    square_show(from);
+    square_show(to);
     Pos fpos = square_convert(from), tpos = square_convert(to);
     Piece* op = board_get(game->board, fpos);
     Piece* dp = board_get(game->board, tpos);
     Check* check = game->check;
    
-    if (check.status == DOUBLE_CHECK && check.threatened == op->side && 
+    if (check->status == DOUBLE_CHECK && check->threatened == op->side && 
                                                             op->kind != KING) {
         return false;
     } //quick check (obvious) 
@@ -421,8 +530,9 @@ bool move(Game* game, Square from, Square to) {
     move_type mt = find_move_type(game, op, dp, mts, to, tylen, &captured_pos);
     //check plausible moves in context now (get down to one move type only)
 
-    if (check.status == CHECK && check.threatened == op->side) {
-        if (!handled_check(game, op, mt, cpos, tpos, captured_pos)) {
+    if (check->status == CHECK && check->threatened == op->side) {
+        if (!handled_check(game, op, mt, check->checking, tpos, 
+                                                              captured_pos)) {
             return false; 
         }
     }
@@ -436,40 +546,22 @@ bool move(Game* game, Square from, Square to) {
     }
     //check that there is nothing on the way from start to finish (exclusive)
 
-    if (!legal_to_move(Game* game, Piece* op, Pos tpos, Pos captured_pos
-                                                    move_type mt)) {
+    if (!legal_to_move(game, op, tpos, captured_pos, mt)) {
         return false;
     }
     //check if piece is allowed to move from its spot (pin)
     //for king, checks for trajectory safety in castle and dest square
 
     //AT THIS POINT, move can be made and all changes to game state carried
-    update_moves(game, mt, fpos, tpos, captured_pos);
-    update_board(game, op, tpos, mt);
+    update_moves(game, mt, from, to, captured_pos);
+    update_board(game, op, fpos, tpos, mt, captured_pos);
     update_turn(game);
 
     //From this point onwards, check consequences of the move:
     //is it a check, is it a checkmate, is it a stalemate, all that
-     
-    update_check
-    //how to check if it is a check, first check that the piece moved is
-    //causing a threat, then take fpos and check if there could be a piece
-    //further from the king in that line (double check, or discovered check)
-
-    if (checking) {
-        update Check structure;
-    } else 
-        set check status to NO_CHECK; leave others unchanged
-
-
-
-
-
-
-
-    return 0;
+    update_check(game, fpos, tpos, mt, captured_pos);
+    return true;
 }
-
 
 void undo(Game* game);
 

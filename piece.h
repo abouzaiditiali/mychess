@@ -49,7 +49,7 @@ Piece* piece_new(piece_kind kind, side side, piece_moved moved, Pos pos);
 void piece_show(Piece* piece);
 void piece_free(Piece* piece);
 
-Translationlist translationlist_new(piece_kind kind); 
+Translationlist* translationlist_new(piece_kind kind); 
 void translationlist_free(Translationlist* t);
 move_type* translationlist_retrieve(Translationlist* tl, Displacement d, 
                                Direction dir, side side, unsigned char* tylen);
@@ -59,5 +59,7 @@ void piecelist_show(Piecelist* piecelist);
 void piecelist_insert(Piecelist* piecelist, Piece* piece);
 void piecelist_delete(Piecelist* piecelist, Piece* piece);
 void piecelist_free(Piecelist* piecelist);
+
+side opp_side(side side);
 
 #endif /* PIECE_H */
