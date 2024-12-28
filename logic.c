@@ -2,15 +2,12 @@
 
 Game* game_new() {
     Game* game = (Game*)malloc(sizeof(Game));
+    malloc_check(game);
     game->board = board_new();
     game->moves = movestack_new();
     game->turn = WHITES_TURN;
-    game->tls = (Translationlist**)malloc(sizeof(Translationlist*) * 6);
-    piece_kind pk[6] = {PAWN, BISHOP, KNIGHT, ROOK, QUEEN, KING};
-    for (unsigned char i = 0; i < 6; i++) {
-        game->tls[i] = translationlist_new(pk[i]);
-    }
     game->check = (Check*)malloc(sizeof(Check));
+    malloc_check(game->check);
     return game;
 }
 
@@ -18,28 +15,57 @@ Game* game_new() {
 void game_set(Game* game) {
     for (unsigned char c = 0; c < board_size; c++) {
         board_set(game->board, pos_make(1, c), 
-                  piece_new(PAWN, BLACK_SIDE, NOT_MOVED, pos_make(1, c)));
+                  piece_new(PAWN, BLACK_SIDE, NOT_MOVED, pos_make(1, c)), NEW);
         board_set(game->board, pos_make(6, c), 
-                  piece_new(PAWN, WHITE_SIDE, NOT_MOVED, pos_make(6, c)));
+                  piece_new(PAWN, WHITE_SIDE, NOT_MOVED, pos_make(6, c)), NEW);
     }
     piece_kind pk[8] = {ROOK, ROOK, KNIGHT, KNIGHT, 
                         BISHOP, BISHOP, QUEEN, KING};
     unsigned char positions[8] = {0, 7, 1, 6, 2, 5, 3, 4};
     for (unsigned char i = 0; i < 8; i++) {
         board_set(game->board, pos_make(0, positions[i]),
-          piece_new(pk[i], BLACK_SIDE, NOT_MOVED, pos_make(0, positions[i])));
+      piece_new(pk[i], BLACK_SIDE, NOT_MOVED, pos_make(0, positions[i])), NEW);
         board_set(game->board, pos_make(7, positions[i]),
-          piece_new(pk[i], WHITE_SIDE, NOT_MOVED, pos_make(7, positions[i])));
+      piece_new(pk[i], WHITE_SIDE, NOT_MOVED, pos_make(7, positions[i])), NEW);
     }
     game->check->status = NO_CHECK;
 }
 
+
 void game_free(Game* game) {
     board_free(game->board);
     movestack_free(game->moves);
-    //make sure to free tl
     free(game->check);
     free(game);
+}
+
+void turn_show(game_turn turn) {
+    printf("\n");
+    if (turn == WHITES_TURN) {
+        printf("White:\n");
+    } else {
+        printf("Black:\n");
+    }
+    printf("\n");
+}
+
+void check_show(check_status status) {
+    printf("Check Status: ");
+    if (status == CHECK) {
+        printf("CHECK\n");
+    } else if (status == DOUBLE_CHECK) {
+        printf("DOUBLE CHECK\n");
+    } else {
+        printf("NO CHECK\n");
+    }
+    printf("\n");
+}
+
+void game_show(Game* game, player_perspective perspective) {
+    board_show(game->board, perspective);
+    check_show(game->check->status);
+    movestack_show(game->moves);
+    turn_show(game->turn);
 }
 
 //Helper
@@ -84,22 +110,23 @@ Piece* nearest_rook(Board* board, move_type mt, side side) {
 }
 
 //any piece not moved should be in its original standard position
-move_type find_move_type(Game* game, Piece* op, Piece* dp, move_type* mts,
-                        Square to, unsigned char tylen, Pos* captured_pos) {
+move_type find_move_type(Game* game, Piece* op, Piece* dp, move_type* mts, 
+                           Pos tpos, unsigned char tylen, Pos* captured_pos) {
     if (tylen == 1) {
         if (dp) {
-            fprintf(stderr, "WB PPush by 2, QK Castle, non-null dest\n");
-            exit(1);
+            //fprintf(stderr, "WB PPush by 2, QK Castle, non-null dest\n");
+            return UNRECOGNIZED;
         }
         if (op->moved == MOVED) {
-            fprintf(stderr, "WB PPush by 2, QK Castle, Pawn or King moved\n");
-            exit(1);
+            return UNRECOGNIZED;
+            //fprintf(stderr, "WB PPush by 2, QK Castle, Pawn or King moved\n");
         }
         if (op->kind == KING) {
            Piece* nearrook = nearest_rook(game->board, mts[0], op->side);
            if (nearrook == NULL || nearrook->kind != ROOK || 
                                                    nearrook->moved == MOVED) {
-                fprintf(stderr, "KQcastle not poss, no piece/rook or moved\n");
+                //fprintf(stderr, "KQcastle not poss, no piece/rook or moved\n");
+                return UNRECOGNIZED;
                 exit(1);
             }
         }
@@ -119,7 +146,7 @@ move_type find_move_type(Game* game, Piece* op, Piece* dp, move_type* mts,
             return NO_CAPTURE;
         case PAWN:
             if (tylen == 2) {
-                if (dp->position.r == 0 || dp->position.r == 7) {
+                if (tpos.r == 0 || tpos.r == 7) {
                     return PAWN_PROMOTION_NO_CAPTURE;
                 }
                 return NO_CAPTURE;
@@ -131,13 +158,12 @@ move_type find_move_type(Game* game, Piece* op, Piece* dp, move_type* mts,
                 }
                 return CAPTURE;
             }
-            printf("%hhu\n", tylen);
             Move last = last_move(game->moves);
             Pos pbehind;
             if (op->side == WHITE_SIDE) {
-                pbehind = pos_make(dp->position.r + 1, dp->position.c); 
+                pbehind = pos_make(tpos.r + 1, tpos.c); 
             } else {
-                pbehind = pos_make(dp->position.r - 1, dp->position.c); 
+                pbehind = pos_make(tpos.r - 1, tpos.c); 
             }
             Square sbehind = pos_convert(pbehind, WHITES_PERSPECTIVE);
             if (last.type == PAWN_PUSH_BY_TWO && 
@@ -145,8 +171,8 @@ move_type find_move_type(Game* game, Piece* op, Piece* dp, move_type* mts,
                 *captured_pos = pbehind;
                 return EN_PASSANT;
             }
-            fprintf(stderr, "Pawn capture, null dp, not en-passant\n");
-            exit(1);
+            return UNRECOGNIZED;
+            //fprintf(stderr, "Pawn capture, null dp, not en-passant\n");
     }
 }
 
@@ -176,8 +202,8 @@ Piece* piece_traj_encounter(Board* board, Direction dir, Pos fpos,
     for (unsigned char i = 0; i < max_repeat; i++) {
         if (out_of_bounds(curr_r, curr_c)) {
             return NULL;
-        } //handle error is betteR?
-        curr_piece = board_get(board, pos_make(curr_r, curr_c)); //handle error
+        } 
+        curr_piece = board_get(board, pos_make(curr_r, curr_c)); //cannot fail
         if (!curr_piece) {
             continue;
         }
@@ -203,8 +229,10 @@ Piece* pin(Board* board, Pos pinned_pos, side pinning_side) {
     if ((abs(d.r) == 1 && abs(d.c) == 2) || (abs(d.r) == 2 && abs(d.c) == 1)) {
         return NULL;
     }
-    //handle error! all errors around the entire code
-    Direction dir = displacement_direction(d); //raises error if not same line
+    Direction dir = displacement_direction(d); 
+    if (dir.r == 0 && dir.c == 0) {
+        return NULL;
+    }
     if (!void_traj_check(board, dir, kpos, fpos)) {
         return NULL;
     }
@@ -362,8 +390,8 @@ bool handled_check(Game* game, Piece* op, move_type mt, Pos cpos, Pos tpos,
     return false;
 }
 
-void update_moves(Game* game, move_type mt, Square from, Square to, 
-                                                        Pos captured_pos) {
+void update_moves(Game* game, piece_kind moved, move_type mt, Square from, 
+                        Square to, Pos captured_pos) {
     piece_kind kind_captured;
     if (is_capture_move(mt)) {
         Piece* pcaptured = board_get(game->board, captured_pos);
@@ -371,7 +399,7 @@ void update_moves(Game* game, move_type mt, Square from, Square to,
     } else {
         kind_captured = PAWN; //trivial
     }
-    Move move = move_make(from, to, mt, kind_captured);
+    Move move = move_make(from, to, moved, mt, kind_captured);
     movestack_add(game->moves, move);
 }
 
@@ -386,17 +414,14 @@ void update_board(Game* game, Piece* op, Pos fpos, Pos tpos, move_type mt,
         }
         op->kind = ch - '0'; //can only be 1, 2, 3, 4
     }
-    board_set(game->board, tpos, op); 
-    board_set(game->board, fpos, NULL);
+    board_set(game->board, tpos, op, EXISTING); 
     if (mt == EN_PASSANT) {
-        board_set(game->board, captured_pos, NULL);
+        board_set(game->board, captured_pos, NULL, NEW); //NEW is trivial
     }
     if (mt == KINGSIDE_CASTLE || mt == QUEENSIDE_CASTLE) {
         Pos in_between = castle_through(mt, tpos);
         Piece* nrook= nearest_rook(game->board, mt, op->side);
-        Pos pos_rook = nrook->position;
-        board_set(game->board, in_between, nrook);
-        board_set(game->board, pos_rook, NULL);
+        board_set(game->board, in_between, nrook, EXISTING);
     }
 }
     
@@ -502,10 +527,8 @@ void update_check(Game* game, Pos fpos, Pos tpos, move_type mt,
 }
 
 bool move(Game* game, Square from, Square to) {
-    square_show(from);
-    square_show(to);
     Pos fpos = square_convert(from), tpos = square_convert(to);
-    Piece* op = board_get(game->board, fpos);
+    Piece* op = board_get(game->board, fpos); //handle out of bounds
     Piece* dp = board_get(game->board, tpos);
     Check* check = game->check;
    
@@ -519,15 +542,24 @@ bool move(Game* game, Square from, Square to) {
 
     Displacement d = pos_displacement(fpos, tpos);
     Direction dir = displacement_direction(d);
+    if (dir.r == 0 && dir.c == 0) {
+        return false;
+    }
     //checks direction (has to be either file, rank, diagonal or the L)
 
     unsigned char tylen;
-    move_type* mts = translationlist_retrieve(game->tls[op->kind], d, dir, 
-                                                            op->side, &tylen);
+    move_type* mts = plausible_mts(op->kind, d, dir, op->side, &tylen);
+    if (mts == NULL) {
+        return false;
+    }
     //returns plausible moves (if displacement or direction don't match, false)
 
     Pos captured_pos;
-    move_type mt = find_move_type(game, op, dp, mts, to, tylen, &captured_pos);
+    move_type mt = find_move_type(game, op, dp, mts, tpos, tylen, 
+                                                                &captured_pos);
+    if (mt == UNRECOGNIZED) {
+        return false;
+    }
     //check plausible moves in context now (get down to one move type only)
 
     if (check->status == CHECK && check->threatened == op->side) {
@@ -553,7 +585,7 @@ bool move(Game* game, Square from, Square to) {
     //for king, checks for trajectory safety in castle and dest square
 
     //AT THIS POINT, move can be made and all changes to game state carried
-    update_moves(game, mt, from, to, captured_pos);
+    update_moves(game, kind, mt, from, to, captured_pos);
     update_board(game, op, fpos, tpos, mt, captured_pos);
     update_turn(game);
 

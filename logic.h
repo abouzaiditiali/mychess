@@ -25,13 +25,13 @@ typedef struct {
     Board* board;
     Movestack* moves;
     game_turn turn;
-    Translationlist** tls; //always of length 6 (there are 6 kinds)
     Check* check; //for efficiency
 } Game;
 
 Game* game_new();
 void game_set(Game* game);
 void game_free(Game* game);
+void game_show(Game* game, player_perspective perspective);
 
 bool move(Game* game, Square from, Square to);
 void undo(Game* game);

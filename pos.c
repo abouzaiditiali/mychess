@@ -24,9 +24,13 @@ bool pos_cmp(Pos pos1, Pos pos2) {
 
 Displacement pos_displacement(Pos from, Pos to) {
     Displacement d;
-    d.r = to.r - from.r;
-    d.c = to.c - from.c;
+    d.r = (char)to.r - from.r;
+    d.c = (char)to.c - from.c;
     return d;
+}
+
+void pos_show(Pos pos) {
+    printf("(%hhu, %hhu)\n", pos.r, pos.c);
 }
 
 Direction displacement_direction(Displacement d) {
@@ -62,15 +66,20 @@ Direction displacement_direction(Displacement d) {
             return dir;
         }
     }
-    fprintf(stderr, "Unable to retrieve direction from displacement\n");
-    exit(1);
+    //fprintf(stderr, "Unable to retrieve direction from displacement\n");
+    Direction dir = {0, 0};
+    return dir;
 }
 
 bool direction_cmp(Direction d1, Direction d2) {
     return d1.r == d2.r && d1.c == d2.c;
 }
 
-void tdd_show(char r, char c) {
+void displacement_show(char r, char c) {
+    printf("(%d, %d)\n", r, c);
+}
+
+void direction_show(char r, char c) {
     printf("(%d, %d)\n", r, c);
 }
 

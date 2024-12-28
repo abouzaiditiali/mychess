@@ -18,248 +18,111 @@ void piece_show(Piece* piece) {
     char* kind;
     char* pk_strings[] = {"PAWN", "BISHOP", "KNIGHT", "ROOK", "QUEEN", "KING"};
     kind = pk_strings[piece->kind];
-    char* side; 
-    if (piece->side == WHITE_SIDE) {
-        side = "WHITE";
-    } else {
-        side = "BLACK";
-    }
-    char* moved;
-    if (piece->moved == MOVED) {
-        moved = "MOVED";
-    } else {
-        moved = "NOT MOVED";
-    }
-    printf("Kind: %s, ", kind);
-    printf("Side: %s, ", side);
-    printf("Position: ");
+    printf("(%s, ", kind);
     square_show(pos_convert(piece->position, WHITES_PERSPECTIVE));
-    printf(", ");
-    printf("Status: %s\n", moved);
+    if (piece->moved == MOVED) {
+        printf(", MOVED)");
+    } else {
+        printf(")");
+    }
 }
 
 void piece_free(Piece* piece) {
     free(piece);
 }
 
-Translationlist* translationlist_new(piece_kind kind) {
-    Translationlist* tl = (Translationlist*)malloc(sizeof(Translationlist));
-    tl->kind = kind;
-    if (kind == PAWN) {
-        tl->len = 6;
-    } else if (kind == KNIGHT || kind == BISHOP || kind == ROOK || kind == QUEEN) {
-        tl->len = 1;
-    } else if (kind == KING) {
-        tl->len = 3;
-    } else {
-        fprintf(stderr, "Unrecognized kind\n");
-        exit(1);
+bool move_recognized(Translation* tr, unsigned char len, Displacement d, 
+                        Direction dir, unsigned char max_repeat) {
+    for (unsigned char i = 0; i < len; i++) {
+        Direction curr_dir;
+        curr_dir.r = tr[i].r;
+        curr_dir.c = tr[i].c;
+        if (max_repeat == 1) {
+            //here comparing displacement to translation (has to be same)
+            if (d.r == tr[i].r && d.c == tr[i].c) {
+                return true;
+            }
+        } else if (direction_cmp(dir, curr_dir)) {
+            return true;
+            //here comparing directions (rook, bishop, queen)
+        }
     }
-    tl->mtt = (MoveTypeTranslation**)malloc(sizeof(MoveTypeTranslation*) * tl->len);
-    if (kind == PAWN) {
-        //White Pawn Capture
-        tl->mtt[0] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
-        tl->mtt[0]->translations = (Translation*)malloc(sizeof(Translation) * 2);
-        tl->mtt[0]->translations[0] = (Translation){{-1, -1}};
-        tl->mtt[0]->translations[1] = (Translation){{-1, 1}};
-        tl->mtt[0]->trlen = 2;
-        tl->mtt[0]->max_repeat = 1;
-        tl->mtt[0]->type = (move_type*)malloc(sizeof(move_type) * 3);
-        tl->mtt[0]->type[0] = CAPTURE;
-        tl->mtt[0]->type[1] = PAWN_PROMOTION_CAPTURE;
-        tl->mtt[0]->type[2] = EN_PASSANT;
-        tl->mtt[0]->tylen = 3;
-        tl->mtt[0]->side = WHITE_SIDE;
-        //White Pawn No Capture
-        tl->mtt[1] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
-        tl->mtt[1]->translations = (Translation*)malloc(sizeof(Translation) * 1);
-        tl->mtt[1]->translations[0] = (Translation){{-1, 0}};
-        tl->mtt[1]->trlen = 1;
-        tl->mtt[1]->max_repeat = 1;
-        tl->mtt[1]->type = (move_type*)malloc(sizeof(move_type) * 2);
-        tl->mtt[1]->type[0] = NO_CAPTURE;
-        tl->mtt[1]->type[1] = PAWN_PROMOTION_NO_CAPTURE;
-        tl->mtt[1]->tylen = 2;
-        tl->mtt[1]->side = WHITE_SIDE;
-        //White Pawn Push by Two
-        tl->mtt[2] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
-        tl->mtt[2]->translations = (Translation*)malloc(sizeof(Translation) * 1);
-        tl->mtt[2]->translations[0] = (Translation){{-2, 0}};
-        tl->mtt[2]->trlen = 1;
-        tl->mtt[2]->max_repeat = 1;
-        tl->mtt[2]->type = (move_type*)malloc(sizeof(move_type) * 1);
-        tl->mtt[2]->type[0] = PAWN_PUSH_BY_TWO;
-        tl->mtt[2]->tylen = 1;
-        tl->mtt[2]->side = WHITE_SIDE;
-        //Black Pawn Capture
-        tl->mtt[3] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
-        tl->mtt[3]->translations = (Translation*)malloc(sizeof(Translation) * 2);
-        tl->mtt[3]->translations[0] = (Translation){{1, -1}};
-        tl->mtt[3]->translations[1] = (Translation){{1, 1}};
-        tl->mtt[3]->trlen = 2;
-        tl->mtt[3]->max_repeat = 1;
-        tl->mtt[3]->type = (move_type*)malloc(sizeof(move_type) * 3);
-        tl->mtt[3]->type[0] = CAPTURE;
-        tl->mtt[3]->type[1] = PAWN_PROMOTION_CAPTURE;
-        tl->mtt[3]->type[2] = EN_PASSANT;
-        tl->mtt[3]->tylen = 3;
-        tl->mtt[3]->side = BLACK_SIDE;
-        //Black Pawn No Capture
-        tl->mtt[4] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
-        tl->mtt[4]->translations = (Translation*)malloc(sizeof(Translation) * 1);
-        tl->mtt[4]->translations[0] = (Translation){{1, 0}};
-        tl->mtt[4]->trlen = 1;
-        tl->mtt[4]->max_repeat = 1;
-        tl->mtt[4]->type = (move_type*)malloc(sizeof(move_type) * 2);
-        tl->mtt[4]->type[0] = NO_CAPTURE;
-        tl->mtt[4]->type[1] = PAWN_PROMOTION_NO_CAPTURE;
-        tl->mtt[4]->tylen = 2;
-        tl->mtt[4]->side = BLACK_SIDE;
-        //Black Pawn push by two
-        tl->mtt[5] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
-        tl->mtt[5]->translations = (Translation*)malloc(sizeof(Translation) * 1);
-        tl->mtt[5]->translations[0] = (Translation){{2, 0}};
-        tl->mtt[5]->trlen = 1;
-        tl->mtt[5]->max_repeat = 1;
-        tl->mtt[5]->type = (move_type*)malloc(sizeof(move_type) * 1);
-        tl->mtt[5]->type[0] = PAWN_PUSH_BY_TWO;
-        tl->mtt[5]->tylen = 1;
-        tl->mtt[5]->side = BLACK_SIDE;
-    } else if (kind == KNIGHT) {
-        tl->mtt[0] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
-        tl->mtt[0]->translations = (Translation*)malloc(sizeof(Translation) * 8);
-        tl->mtt[0]->translations[0] = (Translation){{-2, -1}};
-        tl->mtt[0]->translations[1] = (Translation){{-2, 1}};
-        tl->mtt[0]->translations[2] = (Translation){{-1, -2}};
-        tl->mtt[0]->translations[3] = (Translation){{-1, 2}};
-        tl->mtt[0]->translations[4] = (Translation){{1, -2}};
-        tl->mtt[0]->translations[5] = (Translation){{1, 2}};
-        tl->mtt[0]->translations[6] = (Translation){{2, -1}};
-        tl->mtt[0]->translations[7] = (Translation){{2, 1}};
-        tl->mtt[0]->trlen = 8;
-        tl->mtt[0]->max_repeat = 1;
-        tl->mtt[0]->type = (move_type*)malloc(sizeof(move_type) * 2);
-        tl->mtt[0]->type[0] = CAPTURE;
-        tl->mtt[0]->type[1] = NO_CAPTURE;
-        tl->mtt[0]->tylen = 2;
-        tl->mtt[0]->side = WHITE_SIDE;
-    } else if (kind == BISHOP) {
-        tl->mtt[0] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
-        tl->mtt[0]->translations = (Translation*)malloc(sizeof(Translation) * 4);
-        tl->mtt[0]->translations[0] = (Translation){{-1, -1}};
-        tl->mtt[0]->translations[1] = (Translation){{-1, 1}};
-        tl->mtt[0]->translations[2] = (Translation){{1, -1}};
-        tl->mtt[0]->translations[3] = (Translation){{1, 1}};
-        tl->mtt[0]->trlen = 4;
-        tl->mtt[0]->max_repeat = 7;
-        tl->mtt[0]->type = (move_type*)malloc(sizeof(move_type) * 2);
-        tl->mtt[0]->type[0] = CAPTURE;
-        tl->mtt[0]->type[1] = NO_CAPTURE;
-        tl->mtt[0]->tylen = 2;
-        tl->mtt[0]->side = WHITE_SIDE;
-    } else if (kind == ROOK) {
-        tl->mtt[0] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
-        tl->mtt[0]->translations = (Translation*)malloc(sizeof(Translation) * 4);
-        tl->mtt[0]->translations[0] = (Translation){{-1, 0}};
-        tl->mtt[0]->translations[1] = (Translation){{1, 0}};
-        tl->mtt[0]->translations[2] = (Translation){{0, -1}};
-        tl->mtt[0]->translations[3] = (Translation){{0, 1}};
-        tl->mtt[0]->trlen = 4;
-        tl->mtt[0]->max_repeat = 7;
-        tl->mtt[0]->type = (move_type*)malloc(sizeof(move_type) * 2);
-        tl->mtt[0]->type[0] = CAPTURE;
-        tl->mtt[0]->type[1] = NO_CAPTURE;
-        tl->mtt[0]->tylen = 2;
-        tl->mtt[0]->side = WHITE_SIDE;
-    } else if (kind == QUEEN) {
-        tl->mtt[0] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
-        tl->mtt[0]->translations = (Translation*)malloc(sizeof(Translation) * 8);
-        tl->mtt[0]->translations[0] = (Translation){{-1, -1}};
-        tl->mtt[0]->translations[1] = (Translation){{-1, 0}};
-        tl->mtt[0]->translations[2] = (Translation){{-1, 1}};
-        tl->mtt[0]->translations[3] = (Translation){{0, -1}};
-        tl->mtt[0]->translations[4] = (Translation){{0, 1}};
-        tl->mtt[0]->translations[5] = (Translation){{1, -1}};
-        tl->mtt[0]->translations[6] = (Translation){{1, 0}};
-        tl->mtt[0]->translations[7] = (Translation){{1, 1}};
-        tl->mtt[0]->trlen = 8;
-        tl->mtt[0]->max_repeat = 7;
-        tl->mtt[0]->type = (move_type*)malloc(sizeof(move_type) * 2);
-        tl->mtt[0]->type[0] = CAPTURE;
-        tl->mtt[0]->type[1] = NO_CAPTURE;
-        tl->mtt[0]->tylen = 2;
-        tl->mtt[0]->side = WHITE_SIDE;
-    } else if (kind == KING) {
-        //King Standard Move
-        tl->mtt[0] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
-        tl->mtt[0]->translations = (Translation*)malloc(sizeof(Translation) * 8);
-        tl->mtt[0]->translations[0] = (Translation){{-1, -1}};
-        tl->mtt[0]->translations[1] = (Translation){{-1, 0}};
-        tl->mtt[0]->translations[2] = (Translation){{-1, 1}};
-        tl->mtt[0]->translations[3] = (Translation){{0, -1}};
-        tl->mtt[0]->translations[4] = (Translation){{0, 1}};
-        tl->mtt[0]->translations[5] = (Translation){{1, -1}};
-        tl->mtt[0]->translations[6] = (Translation){{1, 0}};
-        tl->mtt[0]->translations[7] = (Translation){{1, 1}};
-        tl->mtt[0]->trlen = 8;
-        tl->mtt[0]->max_repeat = 1;
-        tl->mtt[0]->type = (move_type*)malloc(sizeof(move_type) * 2);
-        tl->mtt[0]->type[0] = CAPTURE;
-        tl->mtt[0]->type[1] = NO_CAPTURE;
-        tl->mtt[0]->tylen = 2;
-        tl->mtt[0]->side = WHITE_SIDE;
-        //King QueenSide Castle
-        tl->mtt[1] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
-        tl->mtt[1]->translations = (Translation*)malloc(sizeof(Translation) * 1);
-        tl->mtt[1]->translations[0] = (Translation){{0, -2}};
-        tl->mtt[1]->trlen = 1;
-        tl->mtt[1]->max_repeat = 1;
-        tl->mtt[1]->type = (move_type*)malloc(sizeof(move_type) * 1);
-        tl->mtt[1]->type[0] = QUEENSIDE_CASTLE;
-        tl->mtt[1]->tylen = 1;
-        tl->mtt[1]->side = WHITE_SIDE;
-        //King KingSide Castle 
-        tl->mtt[2] = (MoveTypeTranslation*)malloc(sizeof(MoveTypeTranslation));
-        tl->mtt[2]->translations = (Translation*)malloc(sizeof(Translation) * 1);
-        tl->mtt[2]->translations[0] = (Translation){{0, 2}};
-        tl->mtt[2]->trlen = 1;
-        tl->mtt[2]->max_repeat = 1;
-        tl->mtt[2]->type = (move_type*)malloc(sizeof(move_type) * 1);
-        tl->mtt[2]->type[0] = KINGSIDE_CASTLE;
-        tl->mtt[2]->tylen = 1;
-        tl->mtt[2]->side = WHITE_SIDE;
-    }
-    return tl;
+    return false;
 }
 
-move_type* translationlist_retrieve(Translationlist* tl, Displacement d, 
-                              Direction dir, side side, unsigned char* tylen) {
-    MoveTypeTranslation* mtts;
-    Translation* tr;
-    for (unsigned char i = 0; i < tl->len; i++) {
-        mtts = tl->mtt[i]; 
-        if (tl->kind == PAWN && mtts->side != side) {
-            continue;
+move_type* mts_allocate(move_type* copy_from, unsigned char len) {
+    move_type* mts = (move_type*)malloc(sizeof(move_type) * len);
+    malloc_check(mts);
+    for (unsigned char i = 0; i < len; i++) {
+        mts[i] = copy_from[i];
+    }
+    return mts;
+}
+
+move_type* plausible_mts(piece_kind kind, Displacement d, Direction dir,
+                            side side, unsigned char* tylen) {
+    if (kind == PAWN) {
+        Translation tr_capture[2], tr_no_cap[1], tr_push_2[1];
+        if (side == WHITE_SIDE) {
+            tr_capture[0] = (Translation){-1, -1};
+            tr_capture[1] = (Translation){-1, 1};
+            tr_no_cap[0] = (Translation){-1, 0};
+            tr_push_2[0] = (Translation){-2, 0};
+        } else {
+            tr_capture[0] = (Translation){1, -1};
+            tr_capture[1] = (Translation){1, 1};
+            tr_no_cap[0] = (Translation){1, 0};
+            tr_push_2[0] = (Translation){2, 0};
         }
-        tr = mtts->translations;
-        for (unsigned char j = 0; j < mtts->trlen; j++) {
-            Direction curr_dir = {tr[j].r, tr[j].c};
-            if (mtts->max_repeat == 1) {
-                //here comparing displacement to translation (has to be same)
-                tdd_show(d.r, d.c);
-                tdd_show(tr[j].r, tr[j].c);
-                if (d.r != tr[j].r || d.c != tr[j].c) {
-                    continue;
-                }
-                printf("ehehe\n");
-                *tylen = mtts->tylen;
-                return mtts->type;
-            } else if (direction_cmp(dir, curr_dir)) {
-                //here comparing directions (rook, bishop, queen)
-                printf("hehehe\n");
-                *tylen = mtts->tylen;
-                return mtts->type;
-            }
+        if (move_recognized(tr_capture, 2, d, dir, 1)) {
+            move_type mt_cap[3] = {CAPTURE, PAWN_PROMOTION_CAPTURE,EN_PASSANT};
+            *tylen = 3;
+            return mts_allocate(mt_cap, 3);
+        }
+        if (move_recognized(tr_no_cap, 1, d, dir, 1)) {
+            move_type mt_no_cap[2] = {NO_CAPTURE, PAWN_PROMOTION_NO_CAPTURE};
+            *tylen = 2;
+            return mts_allocate(mt_no_cap, 2);
+        }
+        if (move_recognized(tr_push_2, 1, d, dir, 1)) {
+            move_type mt_push_2[1] = {PAWN_PUSH_BY_TWO};
+            *tylen = 1;
+            return mts_allocate(mt_push_2, 1);
+        }
+    } else if (kind == KING) {
+        Translation tr_king[8] = {{0, -1}, {-1, 0}, {0, 1}, {1, 0}, 
+                                    {1, -1}, {-1, 1}, {1, 1}, {1, -1}};
+        if (move_recognized(tr_king, 8, d, dir, 1)) {
+            move_type mt_king[2] = {CAPTURE, NO_CAPTURE};
+            *tylen = 2;
+            return mts_allocate(mt_king, 2);
+        }
+        Translation tr_kcastle[1] = {{0, 2}};
+        if (move_recognized(tr_kcastle, 1, d, dir, 1)) {
+            move_type mt_kcastle[1] = {KINGSIDE_CASTLE};
+            *tylen = 1;
+            return mts_allocate(mt_kcastle, 1);
+        }
+        Translation tr_qcastle[1] = {{0, -2}};
+        if (move_recognized(tr_qcastle, 1, d, dir, 1)) {
+            move_type mt_qcastle[1] = {QUEENSIDE_CASTLE};
+            *tylen = 1;
+            return mts_allocate(mt_qcastle, 1);
+        }
+    } else {
+        move_type mts[2] = {CAPTURE, NO_CAPTURE};
+        *tylen = 2;
+        Translation tr_knight[8] = {{-2, -1}, {-2, 1}, {-1, -2}, {-1, 2}, 
+                                     {1, -2}, {1, 2}, {2, -1}, {2, 1}};
+        Translation tr_rook[4] = {{0, -1}, {-1, 0}, {0, 1}, {1, 0}};
+        Translation tr_queen[8] = {{0, -1}, {-1, 0}, {0, 1}, {1, 0}, 
+                                    {-1, -1}, {-1, 1}, {1, 1}, {1, -1}};
+        Translation tr_bishop[4] = {{-1, -1}, {-1, 1}, {1, 1}, {1, -1}};
+        if ((kind == KNIGHT && move_recognized(tr_knight, 8, d, dir, 1)) ||
+            (kind == BISHOP && move_recognized(tr_bishop, 4, d, dir, 7)) ||
+            (kind == QUEEN && move_recognized(tr_queen, 8, d, dir, 7)) ||
+            (kind == ROOK && move_recognized(tr_rook, 4, d, dir, 7))) {
+            return mts_allocate(mts, 2);
         }
     }
     return NULL;
@@ -276,8 +139,16 @@ Piecelist* piecelist_new() {
 void piecelist_show(Piecelist* piecelist) {
     Piece_entry* head = piecelist->head;
     if (head) {
+        char* side;
+        if (head->piece->side == WHITE_SIDE) {
+            side = "WHITE";
+        } else {
+            side = "BLACK";
+        }
+        printf("%hhu %s pieces still on board\n", piecelist->len, side);
         while (head) {
             piece_show(head->piece);
+            printf(", ");
             head = head->next;
         }
     }

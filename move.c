@@ -1,12 +1,37 @@
 #include "move.h"
 
-Move move_make(Square from, Square to, move_type type, piece_kind captured) {
+Move move_make(Square from, Square to, piece_kind moved, move_type type, 
+                        piece_kind captured) {
     Move move;
     move.from = from;
     move.to = to;
+    move.moved = moved;
     move.type = type;
     move.captured = captured;
     return move;
+}
+
+//Helper
+char convert_kind_to_char(piece_kind kind) {
+    piece_kind pk_char[6] = {'P', 'B', 'N', 'R', 'Q', 'K'};
+    return pk_char[kind];
+}
+
+void move_show(Move move) {
+    if (move.moved != PAWN) {
+        printf("%c", convert_kind_to_char(move.moved));
+    }
+    if (move.moved == PAWN && (move.type == CAPTURE || 
+                               move.type == EN_PASSANT)) {
+        printf("%c", move.from.file);
+    }
+    if (move.type == CAPTURE || move.type == EN_PASSANT) {
+        printf("x");
+    }
+    square_show(move.to);
+    if (move.type == EN_PASSANT) {
+        printf(" e.p.");
+    }
 }
 
 Movestack* movestack_new() {
@@ -66,6 +91,22 @@ Move last_move(Movestack* s) {
         fprintf(stderr, "There is no last move\n");
         exit(1);
     }
-    return s->tail->prev->move;
+    return s->tail->move;
+}
+
+void movestack_show(Movestack* s) {
+    printf("MOVE COUNT: %hhu\n", s->len / 2);
+    unsigned char i = 1, j = 1;
+    Move_entry* curr = s->head;
+    while (curr) {
+        if (i % 2 != 0) {
+            printf("%d. ", j++);
+        }
+        move_show(curr->move);
+        printf(" ");
+        i++;
+        curr = curr->next;
+    }
+    printf("\n");
 }
 

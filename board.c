@@ -101,9 +101,7 @@ void board_show(Board* board, player_perspective perspective) {
     }
     print_chars(perspective);
     printf("\n");
-    printf("%hhu white pieces still on board\n", board->white_pieces->len);
     piecelist_show(board->white_pieces);
-    printf("%hhu black pieces still on board\n", board->black_pieces->len);
     piecelist_show(board->black_pieces);
     printf("\n");
 }
@@ -113,7 +111,7 @@ Piece* board_get(Board* board, Pos pos) {
     return board->matrix[pos.r][pos.c];
 }
 
-void board_set(Board* board, Pos pos, Piece* piece) {
+void board_set(Board* board, Pos pos, Piece* piece, piece_status status) {
     Piece* to_delete = board_get(board, pos);
     if (to_delete) {
         if (to_delete->side == WHITE_SIDE) {
@@ -123,56 +121,20 @@ void board_set(Board* board, Pos pos, Piece* piece) {
         }
     }
     if (piece) {
-        if (piece->side == WHITE_SIDE) {
-            piecelist_insert(board->white_pieces, piece);
+        if (status == NEW) {
+            if (piece->side == WHITE_SIDE) {
+                piecelist_insert(board->white_pieces, piece);
+            } else {
+                piecelist_insert(board->black_pieces, piece);
+            }
         } else {
-            piecelist_insert(board->black_pieces, piece);
+            Pos fpos = piece->position;
+            board->matrix[fpos.r][fpos.c] = NULL;
+            piece->position = pos;
+            piece->moved = MOVED;
         }
-        piece->position = pos; //in case
     }
     board->matrix[pos.r][pos.c] = piece;
-}
-
-//Helper
-bool is_upper_case(char c) {
-    return c >= 'A' && c <= 'Z';
-}
-
-//Helper
-piece_kind find_kind(char c) {
-    if (c == 'P' || c == 'p') return PAWN;
-    if (c == 'R' || c == 'r') return ROOK;
-    if (c == 'Q' || c == 'q') return QUEEN;
-    if (c == 'K' || c == 'k') return KING;
-    if (c == 'B' || c == 'b') return BISHOP;
-    if (c == 'N' || c == 'n') return KNIGHT;
-    fprintf(stderr, "No kind matches the character provided\n");
-    exit(1);
-}
-
-void place_piece(Board* board, char* call) {
-    char ks, c, m;
-    unsigned char r;
-    unsigned char count = sscanf(call, "%c%c%hhu%c", &ks, &c, &r, &m);
-    if (count < 3) {
-        fprintf(stderr, "Invalid call\n");
-        exit(1);
-    }
-    piece_kind kind = find_kind(ks);
-    side side;
-    if (is_upper_case(ks)) {
-        side = WHITE_SIDE;
-    } else {
-        side = BLACK_SIDE;
-    }
-    Pos pos = square_convert(square_make(c, r));
-    piece_moved moved = MOVED;
-    if (count == 4) {
-        if (m == 'n') {
-            moved = NOT_MOVED;
-        }
-    }
-    board_set(board, pos, piece_new(kind, side, moved, pos));
 }
 
 //void board_flip(Board* board) {
