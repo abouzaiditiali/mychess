@@ -33,7 +33,7 @@ void game_set(Game* game);
 void game_free(Game* game);
 void game_show(Game* game, player_perspective perspective);
 
-bool move(Game* game, Square from, Square to);
+bool game_move(Game* game, Square from, Square to);
 void undo(Game* game);
 
 game_outcome outcome(Game* game);

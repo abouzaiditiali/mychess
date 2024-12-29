@@ -526,7 +526,7 @@ void update_check(Game* game, Pos fpos, Pos tpos, move_type mt,
     }
 }
 
-bool move(Game* game, Square from, Square to) {
+bool game_move(Game* game, Square from, Square to) {
     Pos fpos = square_convert(from), tpos = square_convert(to);
     Piece* op = board_get(game->board, fpos); //handle out of bounds
     Piece* dp = board_get(game->board, tpos);

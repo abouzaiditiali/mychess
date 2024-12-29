@@ -19,7 +19,7 @@ int main() {
 
         scanf("%c%hhu%c%hhu%*c", &from.file, &from.rank, &to.file, &to.rank);
         
-        if (move(game, from, to) == false) {
+        if (game_move(game, from, to) == false) {
             continue;
         }
 

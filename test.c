@@ -12,7 +12,7 @@ void play_moves(Game* game, char* moves) {
     Square from, to;
     while (moves[i]) {
         sscanf(moves, "%c%hhu%c%hhu", &from.file, &from.rank, &to.file, &to.rank); 
-        move(game, from, to);
+        game_move(game, from, to);
         moves += 5;
     }
 }

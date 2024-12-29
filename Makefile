@@ -10,5 +10,10 @@ test: globals.h globals.c utils.h utils.c pos.h pos.c piece.h piece.c \
 	clang -Wall -g -O0 -o test \
 	globals.c utils.c pos.c piece.c board.c move.c logic.c test.c 
 
+tui: globals.h globals.c utils.h utils.c pos.h pos.c piece.h piece.c \
+      board.h board.c move.h move.c logic.h logic.c tui.c
+	clang -Wall -g -O0 -o tui \
+	globals.c utils.c pos.c piece.c board.c move.c logic.c tui.c -lncurses
+
 clean: 
-	rm -rf play test *.o *~ *dSYM
+	rm -rf play test tui *.o *~ *dSYM
