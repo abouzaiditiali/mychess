@@ -89,14 +89,15 @@ void nsquare_show(Square square, WINDOW* win) {
     wprintw(win, "%c%hhu", square.file, square.rank);
 }
 
-char nconvert_kind_to_char(piece_kind kind) {
-    piece_kind pk_char[6] = {'P', 'B', 'N', 'R', 'Q', 'K'};
-    return pk_char[kind];
+wchar_t nconvert_kind_to_char(piece_kind kind) {
+    wchar_t pieces[] = L"♙♗♘♖♕♔"; 
+    //piece_kind pk_char[6] = {'P', 'B', 'N', 'R', 'Q', 'K'};
+    return pieces[kind];
 }
 
 void nmove_show(Move move, WINDOW* win) {
     if (move.moved != PAWN) {
-        wprintw(win, "%c", nconvert_kind_to_char(move.moved));
+        wprintw(win, "%lc", nconvert_kind_to_char(move.moved));
     }
     if (move.moved == PAWN && (move.type == CAPTURE || 
                                move.type == EN_PASSANT)) {

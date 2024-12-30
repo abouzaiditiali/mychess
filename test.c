@@ -15,7 +15,7 @@ char* file_handling(FILE* file) {
     fseek(file, -1, SEEK_END); 
     long file_size = ftell(file);
     if ((file_size % 4) != 0) {
-        fprintf(stderr, "Incorrect move annotation\n");
+        fprintf(stderr, "Incorrect Annotation\n");
         exit(1);
     }
     rewind(file);
@@ -30,10 +30,13 @@ void play_game(Game* game, char* moves) {
     Square from, to;
     unsigned int i = 0;
     while (moves[i]) {
-        sscanf(moves, "%c%hhu%c%hhu", &from.file, &from.rank, &to.file, &to.rank); 
+        sscanf(moves, "%c%hhu%c%hhu", &from.file, &from.rank, &to.file, 
+                                                                    &to.rank); 
         printf("From: "); square_show(from); printf("\n");
         printf("To: "); square_show(to); printf("\n");
-        game_move(game, from, to);
+        if (!game_move(game, from, to)) {
+            break;
+        }
         game_show(game, perspective_from_turn(game->turn));
         moves += 4;
     }
@@ -42,7 +45,6 @@ void play_game(Game* game, char* moves) {
 int main() {
     Game* game = game_new();
     game_set(game);
-    
     game_show(game, perspective_from_turn(game->turn));
 
     FILE* file = fopen("annotations.txt", "r");
@@ -50,8 +52,8 @@ int main() {
     fclose(file);
 
     play_game(game, annotations);
-    free(annotations);
 
+    free(annotations);
     game_free(game);
     return 0;
 }
