@@ -298,9 +298,9 @@ bool square_threatened(Board* board, Pos pos, side threatening) {
 
 Pos castle_through(move_type mt, Pos tpos) {
     if (mt == KINGSIDE_CASTLE) { 
-        return pos_make(tpos.r, tpos.c + 1);
-    } else {
         return pos_make(tpos.r, tpos.c - 1);
+    } else {
+        return pos_make(tpos.r, tpos.c + 1);
     }
 }
 
@@ -334,7 +334,7 @@ bool legal_to_move(Game* game, Piece* op, Pos tpos, Pos captured_pos,
                 return false;
             }
             Pos in_between = castle_through(mt, tpos);
-            return square_threatened(game->board, in_between, opp);
+            return !square_threatened(game->board, in_between, opp);
         }
     }
 } 

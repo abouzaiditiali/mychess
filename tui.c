@@ -3,8 +3,7 @@
 #include <locale.h>
 #include <wchar.h>
 
-//Helper 
-void printchars(player_perspective perspective, WINDOW* win) {
+void nprint_chars(player_perspective perspective, WINDOW* win) {
     wprintw(win, "  ");
     if (perspective == WHITES_PERSPECTIVE) {
         for (char c = 'a'; c <= 'h'; c++) {
@@ -18,18 +17,9 @@ void printchars(player_perspective perspective, WINDOW* win) {
     wprintw(win, "\n");
 }
 
-//Helper
-char maybeupp(side side, char c) {
-    if (side == WHITE_SIDE) {
-        char new_c = c - ('a' - 'A');
-        return new_c;
-    }
-    return c;
-}
-
-wchar_t convertpiecetounicode(Piece* piece) {
+wchar_t nconvert_piece_to_unicode(Piece* piece) {
     if (piece == NULL) {
-        return L'.';
+        return L' ';
     }
     wchar_t black_pieces[] = L"♙♗♘♖♕♔"; 
     wchar_t white_pieces[] = L"♟♝♞♜♛♚";
@@ -40,18 +30,10 @@ wchar_t convertpiecetounicode(Piece* piece) {
     }
 }
 
-//Helper
-char convertpiecetochar(Piece* piece) {
-    char pk_chars[] = {'p', 'b', 'n', 'r', 'q', 'k'};
-    if (piece == NULL) {
-        return '.';
-    }
-    return maybeupp(piece->side, pk_chars[piece->kind]);
-}
-
-void boardshow(Board* board, player_perspective perspective, WINDOW* win) {
+void nboard_show(Board* board, player_perspective perspective, WINDOW* win) {
+    wattron(win, A_BOLD);
     wprintw(win, "\n\n");
-    printchars(perspective, win);
+    //nprint_chars(perspective, win);
     unsigned char mu = 8, md = 1, curr = 1;
     for (unsigned char i = 0; i < 17; i++) {
         if (i % 2 == 0) {
@@ -76,43 +58,45 @@ void boardshow(Board* board, player_perspective perspective, WINDOW* win) {
                     piece = board_get(board, pos_flip(wp_pos));
                 }
 
-                wchar_t c = convertpiecetounicode(piece);
+                wchar_t c = nconvert_piece_to_unicode(piece);
                 wprintw(win, " %lc |", c);
             }
             curr++;
-            wprintw(win, " ");
-            if (perspective == WHITES_PERSPECTIVE) {
-                wprintw(win, "%hhu", mu--);
-            } else {
-                wprintw(win, "%hhu", md++);
-            }
+            //wprintw(win, " ");
+            //if (perspective == WHITES_PERSPECTIVE) {
+            //    wprintw(win, "%hhu", mu--);
+            //} else {
+            //    wprintw(win, "%hhu", md++);
+            //}
+            mu--;
+            md++;
         }
         wprintw(win, "\n"); 
     }
-    printchars(perspective, win);
+    nprint_chars(perspective, win);
     wprintw(win, "\n");
+    wattroff(win, A_BOLD);
 }
 
-player_perspective perspectivefromturn(game_turn turn) {
+player_perspective nperspective_from_turn(game_turn turn) {
     if (turn == WHITES_TURN) {
         return WHITES_PERSPECTIVE;
     }
     return BLACKS_PERSPECTIVE;
 }
 
-void squareshow(Square square, WINDOW* win) {
+void nsquare_show(Square square, WINDOW* win) {
     wprintw(win, "%c%hhu", square.file, square.rank);
 }
 
-//Helper
-char convertkindtochar(piece_kind kind) {
+char nconvert_kind_to_char(piece_kind kind) {
     piece_kind pk_char[6] = {'P', 'B', 'N', 'R', 'Q', 'K'};
     return pk_char[kind];
 }
 
-void moveshow(Move move, WINDOW* win) {
+void nmove_show(Move move, WINDOW* win) {
     if (move.moved != PAWN) {
-        wprintw(win, "%c", convertkindtochar(move.moved));
+        wprintw(win, "%c", nconvert_kind_to_char(move.moved));
     }
     if (move.moved == PAWN && (move.type == CAPTURE || 
                                move.type == EN_PASSANT)) {
@@ -121,25 +105,25 @@ void moveshow(Move move, WINDOW* win) {
     if (move.type == CAPTURE || move.type == EN_PASSANT) {
         wprintw(win, "x");
     }
-    squareshow(move.to, win);
+    nsquare_show(move.to, win);
     if (move.type == EN_PASSANT) {
         wprintw(win, " e.p.");
     }
 }
 
-void movestackshow(Move_entry* top_move, WINDOW* win, 
+void nmovestack_show(Move_entry* top_move, WINDOW* win, 
                                                     unsigned char top_mcount) {
-    unsigned char i = 1, r = 2; //starting r
+    unsigned char i = 1, r = 2;
     while (top_move) {
         if (i % 2 != 0) {
             wmove(win, r, 0);
             wclrtoeol(win);
             wprintw(win, "%hhu. ", top_mcount++);
-            moveshow(top_move->move, win);
+            nmove_show(top_move->move, win);
             wprintw(win, " ");
         } else {
             wmove(win, r++, 15);
-            moveshow(top_move->move, win);
+            nmove_show(top_move->move, win);
             wprintw(win, "\n");
         }
         i++;
@@ -150,23 +134,19 @@ void movestackshow(Move_entry* top_move, WINDOW* win,
 
 void update_board_win(Game* game, WINDOW* board_win) {
     wclear(board_win);
-    boardshow(game->board, perspectivefromturn(game->turn), board_win);
+    nboard_show(game->board, nperspective_from_turn(game->turn), board_win);
 }
 
 void update_move_win(Game* game, WINDOW* move_win, Pos* start, 
                         Move_entry** top_move, unsigned char* top_mcount) {
     unsigned char move_len = game->moves->len;
     unsigned char move_count = move_len / 2;
-
-    //update move count
     wmove(move_win, 0, 12);
     wclrtoeol(move_win);
     mvwprintw(move_win, 0, 12, "%d", move_count);
-
-    //add move
     if (start->c == 3) {
         wmove(move_win, start->r, start->c);
-        moveshow(last_move(game->moves), move_win);
+        nmove_show(last_move(game->moves), move_win);
         wprintw(move_win, " ");
         start->c = 15;
         if (start->r == 2) {
@@ -174,14 +154,12 @@ void update_move_win(Game* game, WINDOW* move_win, Pos* start,
         }
     } else {
         wmove(move_win, start->r, 15);
-        moveshow(last_move(game->moves), move_win);
+        nmove_show(last_move(game->moves), move_win);
         start->c = 3;
         if (start->r == 6) { //MAX INDEX of LINES of moves displayed
             *top_move = (*top_move)->next->next;
             *top_mcount += 1;
-            //end reached;
-            //no change to r;
-            movestackshow(*top_move, move_win, *top_mcount);
+            nmovestack_show(*top_move, move_win, *top_mcount);
             wclrtoeol(move_win);
         } else {
             start->r += 1;
@@ -193,26 +171,27 @@ void update_move_win(Game* game, WINDOW* move_win, Pos* start,
 int main() {
     setlocale(LC_ALL, "");
     initscr();
-    //start_color();
+    start_color();
     echo();
-
-    //init_pair(1, COLOR_WHITE, COLOR_BLACK);
-    //wbkgd(stdscr, COLOR_PAIR(1));
-
+    init_pair(1, COLOR_WHITE, COLOR_BLACK);
+    wbkgd(stdscr, COLOR_PAIR(1));
     refresh();
 
-    WINDOW *board_win = newwin(25, 40, 0, 0);
-    WINDOW *move_win = newwin(15, 27, 2, 45);
+    WINDOW *board_win = newwin(20, 37, 0, 0); 
+    //minimum 20 height for screen (more appealing at 21), 37 width for board
+    //width limit has to be one extra character for some reason 
+    WINDOW *move_win = newwin(10, 27, 2, 39);
+    //minimum 68 width for screen, 37 (board) + 3 (space) + 28 (move)
 
     Game* game = game_new();
     game_set(game);
 
-    boardshow(game->board, perspectivefromturn(game->turn), board_win);
+    nboard_show(game->board, nperspective_from_turn(game->turn), board_win);
     wrefresh(board_win);
     
     wprintw(move_win, "MOVE COUNT: %hhu\n\n", game->moves->len / 2);
     wprintw(move_win, "1. ");
-    Pos start = pos_make(2, 3); //right below move count
+    Pos start = pos_make(2, 3);
     Move_entry* top_move;
     unsigned char top_mcount = 1;
     wrefresh(move_win);

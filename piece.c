@@ -196,6 +196,8 @@ void piecelist_delete(Piecelist* piecelist, Piece* piece) {
                 Piece_entry* to_delete = curr->next; 
                 curr->next = curr->next->next;
                 piece_entry_free(to_delete);
+                (piecelist->len)--;
+                break;
             }
             curr = curr->next;
         }
