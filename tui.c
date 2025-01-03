@@ -78,13 +78,6 @@ void nboard_show(Board* board, player_perspective perspective, WINDOW* win) {
     wattroff(win, A_BOLD);
 }
 
-player_perspective nperspective_from_turn(game_turn turn) {
-    if (turn == WHITES_TURN) {
-        return WHITES_PERSPECTIVE;
-    }
-    return BLACKS_PERSPECTIVE;
-}
-
 void nsquare_show(Square square, WINDOW* win) {
     wprintw(win, "%c%hhu", square.file, square.rank);
 }
@@ -135,7 +128,7 @@ void nmovestack_show(Move_entry* top_move, WINDOW* win,
 
 void update_board_win(Game* game, WINDOW* board_win) {
     wclear(board_win);
-    nboard_show(game->board, nperspective_from_turn(game->turn), board_win);
+    nboard_show(game->board, perspective_from_turn(game->turn), board_win);
 }
 
 void update_move_win(Game* game, WINDOW* move_win, Pos* start, 
@@ -187,7 +180,7 @@ int main() {
     Game* game = game_new();
     game_set(game);
 
-    nboard_show(game->board, nperspective_from_turn(game->turn), board_win);
+    nboard_show(game->board, perspective_from_turn(game->turn), board_win);
     wrefresh(board_win);
     
     wprintw(move_win, "MOVE COUNT: %hhu\n\n", game->moves->len / 2);

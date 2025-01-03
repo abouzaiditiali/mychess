@@ -5,6 +5,11 @@ Pos pos_make(unsigned char r, unsigned char c) {
     return pos;
 }
 
+Direction direction_make(char r, char c) {
+    Direction dir = {r, c};
+    return dir;
+}
+
 Pos pos_flip(Pos pos) {
     return pos_make(board_size - 1 - pos.r, board_size - 1 - pos.c);
 }
@@ -33,11 +38,33 @@ void pos_show(Pos pos) {
     printf("(%hhu, %hhu)\n", pos.r, pos.c);
 }
 
+Pos crossedpos_get(move_type mt, Pos tpos) {
+    if (mt == KINGSIDE_CASTLE) { 
+        return pos_make(tpos.r, tpos.c - 1);
+    } else {
+        return pos_make(tpos.r, tpos.c + 1);
+    }
+}
+
+bool pos_in_traj(Pos pos, Pos e1, Pos e2) {
+    Displacement d1 = pos_displacement(pos, e2);
+    Direction dir1 = displacement_direction(d1);
+    Displacement d2 = pos_displacement(e1, e2);
+    Direction dir2 = displacement_direction(d2);
+    if (direction_cmp(dir1, dir2)) {
+        if (d1.r == 0 && d2.r == 0) {
+            return abs(d1.c) < abs(d2.c);
+        } else if (d1.c == 0 && d2.c == 0) {
+            return abs(d1.r) < abs(d2.r);
+        } else if (abs(d1.r) == abs(d1.c) && abs(d2.r) == abs(d2.c)) {
+            return abs(d1.r) < abs(d2.r);
+        }
+    }
+    return false;
+}
+
 Direction displacement_direction(Displacement d) {
-    if ((abs(d.r) == 1 && abs(d.c) == 2) || (abs(d.r) == 2 && abs(d.c) == 1)) {
-        Direction dir = {d.r, d.c}; //L
-        return dir;
-    } else if (d.r == 0 || d.c == 0) {
+    if (d.r == 0 || d.c == 0) {
         if (d.c > 0) {
             Direction dir = {0, 1}; //Rank to the right
             return dir;

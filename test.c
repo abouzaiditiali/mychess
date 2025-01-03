@@ -1,12 +1,5 @@
 #include "logic.h"
 
-player_perspective perspective_from_turn(game_turn turn) {
-    if (turn == WHITES_TURN) {
-        return WHITES_PERSPECTIVE;
-    }
-    return BLACKS_PERSPECTIVE;
-}
-
 char* file_handling(FILE* file) {
     if (file == NULL) {
         fprintf(stderr, "Failed to open file\n");
