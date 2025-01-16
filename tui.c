@@ -179,13 +179,11 @@ int main(int argc, char* argv[]) {
 
     Game* game = game_new();
     game_set(game);
-    int move_count_reached; 
+    int move_count_reached = 20;
     int check_count_to_win;
     if (argc == 2) {
-        move_count_reached = atoi(argv[1]);
-        check_count_to_win = atoi(argv[2]);
+        check_count_to_win = atoi(argv[1]);
     } else {
-        move_count_reached = 20;
         check_count_to_win = 3;
     }
 
