@@ -162,7 +162,7 @@ void update_move_win(Game* game, WINDOW* move_win, Pos* start,
     }
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     setlocale(LC_ALL, "");
     initscr();
     start_color();
@@ -174,11 +174,20 @@ int main() {
     WINDOW *board_win = newwin(20, 37, 0, 0); 
     //minimum 20 height for screen (more appealing at 21), 37 width for board
     //width limit has to be one extra character for some reason 
-    WINDOW *move_win = newwin(10, 27, 2, 39);
+    WINDOW *move_win = newwin(20, 27, 2, 39);
     //minimum 68 width for screen, 37 (board) + 3 (space) + 28 (move)
 
     Game* game = game_new();
     game_set(game);
+    int move_count_reached; 
+    int check_count_to_win;
+    if (argc == 2) {
+        move_count_reached = atoi(argv[1]);
+        check_count_to_win = atoi(argv[2]);
+    } else {
+        move_count_reached = 20;
+        check_count_to_win = 3;
+    }
 
     nboard_show(game->board, perspective_from_turn(game->turn), board_win);
     wrefresh(board_win);
@@ -188,25 +197,58 @@ int main() {
     Pos start = pos_make(2, 3);
     Move_entry* top_move;
     unsigned char top_mcount = 1;
+    mvwprintw(move_win, 10, 0, "CHECK COUNT: %d", game->check_count);
     wrefresh(move_win);
+
+    int center_row = 20 / 2;
+    int center_col = (37 - 11) / 2;
 
     Square from, to;
     while (1) {
         move(0, 0);
         printw("Enter move: ");
-        scanw("%c%hhu%c%hhu", &from.file, &from.rank, &to.file, &to.rank); 
-        if (from.file == 'q') {
-            break;
+        if (!(scanw("%c%hhu%c%hhu", &from.file, &from.rank, &to.file, &to.rank) == 4)) {
+            update_board_win(game, board_win);
+            wrefresh(board_win);
+            continue;
         }
-        game_move(game, from, to);
+
+        if (!game_move(game, from, to)) {
+            update_board_win(game, board_win);
+            wrefresh(board_win);
+            continue;
+        }
+
+        if (game->moves->len == move_count_reached) {
+            game->outcome = DRAW;
+        } else if (game->check_count >= check_count_to_win) {
+            game->outcome = WHITE_WIN;
+        } else if (game->check_count <= -check_count_to_win) {
+            game->outcome = BLACK_WIN;
+        }
 
         update_board_win(game, board_win);
         wrefresh(board_win);
 
         update_move_win(game, move_win, &start, &top_move, &top_mcount);
+        mvwprintw(move_win, 10, 0, "CHECK COUNT: %d", game->check_count);
         wrefresh(move_win);
+
+        game_outcome o = outcome(game);
+        if (o != IN_PROGRESS) {
+            if (o == DRAW) {
+                mvwprintw(board_win, center_row, center_col, "It's a draw");
+            } else if (o == WHITE_WIN) {
+                mvwprintw(board_win, center_row, center_col, "White wins.");
+            } else if (o == BLACK_WIN) {
+                mvwprintw(board_win, center_row, center_col, "Black wins.");
+            }
+            wrefresh(board_win);
+            break;
+        }
     }
 
+    getch();
     delwin(board_win);
     delwin(move_win);
     endwin(); 

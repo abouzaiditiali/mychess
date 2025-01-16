@@ -19,6 +19,8 @@ typedef struct {
     Movestack* moves;
     game_turn turn;
     Check* check; //for efficiency
+    game_outcome outcome;
+    char check_count; //-3 black wins, +3 white wins
 } Game;
 
 Game* game_new();

@@ -29,6 +29,8 @@ void game_set(Game* game) {
       piece_new(pk[i], WHITE_SIDE, NOT_MOVED, pos_make(7, positions[i])), NEW);
     }
     game->check->status = NO_CHECK;
+    game->outcome = IN_PROGRESS;
+    game->check_count = 0;
 }
 
 
@@ -243,10 +245,35 @@ bool game_move(Game* game, Square from, Square to) {
     //From this point onwards, check consequences of the move:
     //is it a check, is it a checkmate, is it a stalemate, all that
     update_check(game, fpos, tpos, mt, captured_pos);
+
+    if (check->status == CHECK) {
+        if (check->threatened == WHITE_SIDE) {
+            (game->check_count)--;
+        } else {
+            (game->check_count)++;
+        }
+    } else if (check->status == DOUBLE_CHECK) {
+        if (check->threatened == WHITE_SIDE) {
+            game->check_count -= 2;
+        } else {
+            game->check_count += 2;
+        }
+    }
+
+    if (game->moves->len == 20) {
+        game->outcome = DRAW;
+    } else if (game->check_count >= 3) {
+        game->outcome = WHITE_WIN;
+    } else if (game->check_count <= -3) {
+        game->outcome = BLACK_WIN;
+    }
+
     return true;
 }
 
 void undo(Game* game);
 
-game_outcome outcome(Game* game);
+game_outcome outcome(Game* game) {
+    return game->outcome;
+}
 
